@@ -9,11 +9,15 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT; // Nur den Render-Port verwenden, keinen Fallback
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/casino');
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).catch(err => console.error('MongoDB connection error:', err));
 
 // Middleware
 app.use(express.json());
