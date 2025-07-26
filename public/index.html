@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Casino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+  <div id="app" class="w-full max-w-4xl p-4"></div>
+  <script type="module">
+    import { createApp } from 'https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.esm-browser.js';
+    const socket = io();
+
+    createApp({
+      data() {
+        return {
+          token: localStorage.getItem('token') || '',
+          username: localStorage.getItem('username') || '',
+          balance: 0,
+          page: 'login',
+          registerUsername: '',
+          registerPassword: '',
+          loginUsername: '',
+          loginPassword: '',
+          messages: [],
+          newMessage: '',
+          onlineUsers: [],
+          bet: 10,
+          tiles: [],
+        };
+      },
+      methods: {
+        async register() {
+          const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: this.registerUsername, password: this.registerPassword }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert('Registered successfully! Please log in.');
+            this.page = 'login';
+          } else {
+            alert(data.error);
+          }
+        },
+        async login() {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: this.loginUsername, password: this.loginPassword }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            this.token = data.token;
+            this.username = data.username;
+            this.balance = data.balance;
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('username', data.username);
+            this.page = 'home';
+            socket.emit('join', { username: this.username, token: this.token });
+          } else {
+            alert(data.error);
+          }
+        },
+        async playBlackjack() {
+          const res = await fetch('/api/blackjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+            body: JSON.stringify({ bet: this.bet }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            this.balance = data.balance;
+            alert(`Result: ${data.result}\nPlayer: ${data.playerCards.join(', ')}\nDealer: ${data.dealerCards.join(', ')}`);
+          } else {
+            alert(data.error);
+          }
+        },
+        async playMines(tile) {
+          this.tiles.push(tile);
+          const res = await fetch('/api/mines', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+            body: JSON.stringify({ bet: this.bet, tiles: this.tiles }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            this.balance = data.balance;
+            if (data.hitMine) {
+              alert(`You hit a mine! Mines at: ${data.mines.join(', ')}`);
+              this.tiles = [];
+            } else {
+              alert('Safe! Keep going or cash out.');
+            }
+          } else {
+            alert(data.error);
+          }
+        },
+        sendMessage() {
+          if (this.newMessage.trim()) {
+            socket.emit('message', this.newMessage);
+            this.newMessage = '';
+          }
+        },
+      },
+      mounted() {
+        if (this.token && this.username) {
+          this.page = 'home';
+          socket.emit('join', { username: this.username, token: this.token });
+        }
+        socket.on('messages', messages => (this.messages = messages));
+        socket.on('message', message => this.messages.push(message));
+        socket.on('onlineUsers', users => (this.onlineUsers = users));
+      },
+      template: `
+        <div class="space-y-4">
+          <div v-if="page === 'login'" class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl mb-4 font-bold">Login</h2>
+            <input v-model="loginUsername" placeholder="Username" class="w-full p-2 mb-2 bg-gray-700 rounded" />
+            <input v-model="loginPassword" type="password" placeholder="Password" class="w-full p-2 mb-4 bg-gray-700 rounded" />
+            <button @click="login" class="bg-blue-600 p-2 rounded w-full hover:bg-blue-700">Login</button>
+            <button @click="page = 'register'" class="mt-2 text-blue-400 hover:text-blue-300">Register</button>
+          </div>
+          <div v-else-if="page === 'register'" class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl mb-4 font-bold">Register</h2>
+            <input v-model="registerUsername" placeholder="Username" class="w-full p-2 mb-2 bg-gray-700 rounded" />
+            <input v-model="registerPassword" type="password" placeholder="Password" class="w-full p-2 mb-4 bg-gray-700 rounded" />
+            <button @click="register" class="bg-blue-600 p-2 rounded w-full hover:bg-blue-700">Register</button>
+            <button @click="page = 'login'" class="mt-2 text-blue-400 hover:text-blue-300">Back to Login</button>
+          </div>
+          <div v-else class="space-y-4">
+            <div class="bg-gray-800 p-4 rounded-lg shadow-lg flex justify-between items-center">
+              <h2 class="text-xl font-bold">Welcome, {{ username }}!</h2>
+              <span class="text-lg">Balance: {{ balance }} Coins</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+                <h2 class="text-xl mb-2 font-bold">Blackjack</h2>
+                <input v-model.number="bet" type="number" min="1" placeholder="Bet" class="w-full p-2 mb-2 bg-gray-700 rounded" />
+                <button @click="playBlackjack" class="bg-green-600 p-2 rounded w-full hover:bg-green-700">Play</button>
+              </div>
+              <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+                <h2 class="text-xl mb-2 font-bold">Mines</h2>
+                <input v-model.number="bet" type="number" min="1" placeholder="Bet" class="w-full p-2 mb-2 bg-gray-700 rounded" />
+                <div class="grid grid-cols-5 gap-1">
+                  <button v-for="i in 25" @click="playMines(i-1)" :class="['bg-gray-700 p-2 rounded', { 'bg-red-600': tiles.includes(i-1) }]" :disabled="tiles.includes(i-1)">{{ i }}</button>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+              <h2 class="text-xl mb-2 font-bold">Chat</h2>
+              <div class="h-64 overflow-y-auto mb-2 p-2 bg-gray-700 rounded">
+                <p v-for="msg in messages" class="mb-1">{{ msg.username }}: {{ msg.message }} <span class="text-xs text-gray-400">{{ new Date(msg.timestamp).toLocaleTimeString() }}</span></p>
+              </div>
+              <div class="flex">
+                <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Type a message..." class="flex-1 p-2 bg-gray-700 rounded-l" />
+                <button @click="sendMessage" class="bg-blue-600 p-2 rounded-r hover:bg-blue-700">Send</button>
+              </div>
+              <div class="mt-2 text-sm">Online: {{ onlineUsers.join(', ') || 'No one online' }}</div>
+            </div>
+          </div>
+        </div>
+      `,
+    }).mount('#app');
+  </script>
+</body>
+</html>
