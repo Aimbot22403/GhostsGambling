@@ -1,171 +1,323 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Casino</title>
+
+  <!-- Tailwind & Socket.io -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
-</head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
-  <div id="app" class="w-full max-w-4xl p-4"></div>
-  <script type="module">
-    import { createApp } from 'https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.esm-browser.js';
-    const socket = io();
 
-    createApp({
-      data() {
-        return {
-          token: localStorage.getItem('token') || '',
-          username: localStorage.getItem('username') || '',
-          balance: 0,
-          page: 'login',
-          registerUsername: '',
-          registerPassword: '',
-          loginUsername: '',
-          loginPassword: '',
-          messages: [],
-          newMessage: '',
-          onlineUsers: [],
-          bet: 10,
-          tiles: [],
-        };
-      },
-      methods: {
-async register() {
-  console.log('Registering:', this.registerUsername, this.registerPassword); // Debugging
-  const res = await fetch('/api/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: this.registerUsername, password: this.registerPassword }),
-  });
-  const data = await res.json();
-  if (res.ok) {
-    alert('Registered successfully! Please log in.');
-    this.page = 'login';
-  } else {
-    alert(data.error);
-  }
-},
-        async login() {
-          const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: this.loginUsername, password: this.loginPassword }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            this.token = data.token;
-            this.username = data.username;
-            this.balance = data.balance;
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('username', data.username);
-            this.page = 'home';
-            socket.emit('join', { username: this.username, token: this.token });
-          } else {
-            alert(data.error);
-          }
-        },
-        async playBlackjack() {
-          const res = await fetch('/api/blackjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-            body: JSON.stringify({ bet: this.bet }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            this.balance = data.balance;
-            alert(`Result: ${data.result}\nPlayer: ${data.playerCards.join(', ')}\nDealer: ${data.dealerCards.join(', ')}`);
-          } else {
-            alert(data.error);
-          }
-        },
-        async playMines(tile) {
-          this.tiles.push(tile);
-          const res = await fetch('/api/mines', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-            body: JSON.stringify({ bet: this.bet, tiles: this.tiles }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            this.balance = data.balance;
-            if (data.hitMine) {
-              alert(`You hit a mine! Mines at: ${data.mines.join(', ')}`);
-              this.tiles = [];
-            } else {
-              alert('Safe! Keep going or cash out.');
-            }
-          } else {
-            alert(data.error);
-          }
-        },
-        sendMessage() {
-          if (this.newMessage.trim()) {
-            socket.emit('message', this.newMessage);
-            this.newMessage = '';
-          }
-        },
-      },
-      mounted() {
-        if (this.token && this.username) {
-          this.page = 'home';
-          socket.emit('join', { username: this.username, token: this.token });
-        }
-        socket.on('messages', messages => (this.messages = messages));
-        socket.on('message', message => this.messages.push(message));
-        socket.on('onlineUsers', users => (this.onlineUsers = users));
-      },
-      template: `
-        <div class="space-y-4">
-          <div v-if="page === 'login'" class="bg-gray-800 p-6 rounded-lg shadow-lg">
-            <h2 class="text-2xl mb-4 font-bold">Login</h2>
-            <input v-model="loginUsername" placeholder="Username" class="w-full p-2 mb-2 bg-gray-700 rounded" />
-            <input v-model="loginPassword" type="password" placeholder="Password" class="w-full p-2 mb-4 bg-gray-700 rounded" />
-            <button @click="login" class="bg-blue-600 p-2 rounded w-full hover:bg-blue-700">Login</button>
-            <button @click="page = 'register'" class="mt-2 text-blue-400 hover:text-blue-300">Register</button>
-          </div>
-          <div v-else-if="page === 'register'" class="bg-gray-800 p-6 rounded-lg shadow-lg">
-            <h2 class="text-2xl mb-4 font-bold">Register</h2>
-            <input v-model="registerUsername" placeholder="Username" class="w-full p-2 mb-2 bg-gray-700 rounded" />
-            <input v-model="registerPassword" type="password" placeholder="Password" class="w-full p-2 mb-4 bg-gray-700 rounded" />
-            <button @click="register" class="bg-blue-600 p-2 rounded w-full hover:bg-blue-700">Register</button>
-            <button @click="page = 'login'" class="mt-2 text-blue-400 hover:text-blue-300">Back to Login</button>
-          </div>
-          <div v-else class="space-y-4">
-            <div class="bg-gray-800 p-4 rounded-lg shadow-lg flex justify-between items-center">
-              <h2 class="text-xl font-bold">Welcome, {{ username }}!</h2>
-              <span class="text-lg">Balance: {{ balance }} Coins</span>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
-                <h2 class="text-xl mb-2 font-bold">Blackjack</h2>
-                <input v-model.number="bet" type="number" min="1" placeholder="Bet" class="w-full p-2 mb-2 bg-gray-700 rounded" />
-                <button @click="playBlackjack" class="bg-green-600 p-2 rounded w-full hover:bg-green-700">Play</button>
-              </div>
-              <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
-                <h2 class="text-xl mb-2 font-bold">Mines</h2>
-                <input v-model.number="bet" type="number" min="1" placeholder="Bet" class="w-full p-2 mb-2 bg-gray-700 rounded" />
-                <div class="grid grid-cols-5 gap-1">
-                  <button v-for="i in 25" @click="playMines(i-1)" :class="['bg-gray-700 p-2 rounded', { 'bg-red-600': tiles.includes(i-1) }]" :disabled="tiles.includes(i-1)">{{ i }}</button>
-                </div>
-              </div>
-            </div>
-            <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
-              <h2 class="text-xl mb-2 font-bold">Chat</h2>
-              <div class="h-64 overflow-y-auto mb-2 p-2 bg-gray-700 rounded">
-                <p v-for="msg in messages" class="mb-1">{{ msg.username }}: {{ msg.message }} <span class="text-xs text-gray-400">{{ new Date(msg.timestamp).toLocaleTimeString() }}</span></p>
-              </div>
-              <div class="flex">
-                <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Type a message..." class="flex-1 p-2 bg-gray-700 rounded-l" />
-                <button @click="sendMessage" class="bg-blue-600 p-2 rounded-r hover:bg-blue-700">Send</button>
-              </div>
-              <div class="mt-2 text-sm">Online: {{ onlineUsers.join(', ') || 'No one online' }}</div>
-            </div>
-          </div>
+  <!-- Blackjack Styles -->
+  <style>
+    /* ====== Blackjack ====== */
+    #bj-game {
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      text-align: center;
+      padding: 30px;
+    }
+    #bj-game .hand { margin: 20px 0; }
+    #bj-game .card {
+      display: inline-block;
+      background: #1abc9c;
+      color: black;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    #bj-game button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 10px;
+      border: none;
+      background-color: #2980b9;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #bj-game button:hover { background-color: #1f6391; }
+    #bj-result { font-size: 20px; margin-top: 20px; }
+  </style>
+
+  <!-- Mines Styles -->
+  <style>
+    /* ====== Mines ====== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap');
+    .mines-container * { box-sizing: border-box; }
+    .mines-container {
+      font-family: 'Inter', sans-serif;
+      color: white;
+      display: flex;
+      gap: 30px;
+    }
+    .mines-left {
+      width: 300px;
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    .mines-left h2 { font-size: 18px; margin-bottom: 15px; }
+    .mines-left label { font-size: 13px; color: #cbd5e1; }
+    .mines-left input, .mines-left select {
+      width: 100%; padding: 10px; margin: 8px 0 15px;
+      border-radius: 8px; border: none; background: #334155; color: white;
+    }
+    .mines-left button {
+      width: 100%; padding: 10px; border: none; border-radius: 8px;
+      background: #3b82f6; color: white; font-weight: bold; cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .mines-left .multiplier { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+    .mines-left .balance-display { font-size: 14px; color: #cbd5e1; margin-bottom: 15px; }
+
+    .mines-board {
+      flex-grow: 1; background: #1e293b; padding: 30px; border-radius: 12px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .mines-board h2 { font-size: 16px; margin-bottom: 20px; }
+    .mines-grid {
+      display: grid; grid-template-columns: repeat(5, 60px); gap: 10px;
+    }
+    .cell {
+      width: 60px; height: 60px; border-radius: 10px;
+      background: #334155; display: flex; align-items: center;
+      justify-content: center; font-size: 24px; cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .cell.safe { background: #22c55e; }
+    .cell.mine { background: #ef4444; }
+
+    .overlay {
+      position: fixed; top: 30%; left: 50%;
+      transform: translateX(-50%);
+      background: #0ea5e9; color: black;
+      padding: 20px 40px; border-radius: 12px;
+      font-size: 20px; font-weight: bold;
+      display: none; z-index: 9999;
+    }
+    .overlay .emoji { font-size: 26px; margin-right: 10px; }
+  </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col min-h-screen">
+
+  <!-- App Container -->
+  <div id="app" class="flex-1 flex flex-col">
+
+    <!-- Tabs -->
+    <nav class="bg-gray-800 flex justify-around p-3">
+      <button @click="page='home'" :class="tabClass('home')">🏠 Home</button>
+      <button @click="page='blackjack'" :class="tabClass('blackjack')">🃏 Blackjack</button>
+      <button @click="page='mines'" :class="tabClass('mines')">💣 Mines</button>
+    </nav>
+
+    <!-- Content -->
+    <main class="p-4 flex-1 overflow-auto">
+      <!-- Home -->
+      <div v-show="page==='home'" class="text-center">
+        <h1 class="text-2xl font-bold mb-4">Welcome, {{ username }}!</h1>
+        <p class="text-gray-400">Balance: {{ balance }} Coins</p>
+        <p class="mt-4 text-gray-500">Wähle ein Spiel oben aus oder chatte unten!</p>
+      </div>
+
+      <!-- Blackjack -->
+      <div v-show="page==='blackjack'" id="bj-game">
+        <h1>🃏 Blackjack - Hans Has Luck</h1>
+        <div class="hand">
+          <h2>Your Hand</h2>
+          <div id="player-cards"></div>
+          <p id="player-total"></p>
         </div>
-      `,
-    }).mount('#app');
+        <div class="hand">
+          <h2>Dealer's Hand</h2>
+          <div id="dealer-cards"></div>
+          <p id="dealer-total"></p>
+        </div>
+        <button onclick="bjHit()">Hit</button>
+        <button onclick="bjStand()">Stand</button>
+        <button onclick="bjReset()">New Game</button>
+        <p id="bj-result"></p>
+      </div>
+
+      <!-- Mines -->
+      <div v-show="page==='mines'" class="mines-container">
+        <div class="mines-left">
+          <h2>🧪 Mines Spiel</h2>
+          <label>Einsatz</label>
+          <input type="number" id="betAmount" value="1000">
+          <label>Anzahl Minen</label>
+          <select id="mineCount">
+            <option>1</option><option>2</option><option>3</option><option>5</option><option>10</option>
+          </select>
+          <div class="multiplier" id="multiplier">1.00x</div>
+          <div class="balance-display">
+            💰 Balance: <span id="balanceDisplay">0</span> Coins
+          </div>
+          <button onclick="startMines()">🎮 Start Game</button>
+          <button onclick="cashout()">💸 Auszahlen</button>
+        </div>
+        <div class="mines-board">
+          <h2>🧪 Feld auswählen</h2>
+          <div class="mines-grid" id="grid"></div>
+        </div>
+        <div class="overlay" id="cashoutMessage">
+          <span class="emoji">🎉</span> Ausgezahlt! +<span id="cashoutAmount"></span> Coins!
+        </div>
+      </div>
+    </main>
+
+    <!-- Chat -->
+    <footer class="bg-gray-800 p-4 border-t border-gray-700">
+      <h2 class="font-bold mb-2">💬 Chat</h2>
+      <div class="h-48 overflow-y-auto bg-gray-700 rounded p-2 mb-2">
+        <p v-for="msg in messages" class="text-sm mb-1">
+          <strong>{{ msg.username }}</strong>: {{ msg.message }}
+          <span class="text-xs text-gray-400">({{ new Date(msg.timestamp).toLocaleTimeString() }})</span>
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <input v-model="newMessage" @keyup.enter="sendMessage"
+               class="flex-1 p-2 bg-gray-600 rounded" placeholder="Type a message..."/>
+        <button @click="sendMessage" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">Send</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Blackjack Script -->
+  <script>
+    // Blackjack Logic (1:1 aus deinem Beispiel)
+    const playerCardsEl = document.getElementById('player-cards'),
+          dealerCardsEl = document.getElementById('dealer-cards'),
+          playerTotalEl = document.getElementById('player-total'),
+          dealerTotalEl = document.getElementById('dealer-total'),
+          resultEl = document.getElementById('bj-result');
+    const flipSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_533c09b3e4.mp3'),
+          winSound = new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_8a3c1f1e79.mp3'),
+          loseSound = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_b20b7f6e98.mp3'),
+          drawSound = new Audio('https://cdn.pixabay.com/audio/2022/03/22/audio_ebedcbfdd5.mp3');
+    let deck = [], playerHand = [], dealerHand = [], gameOver = false;
+    function createDeck() {
+      const suits=['♠','♥','♣','♦'], vals=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], d=[];
+      suits.forEach(s=>vals.forEach(v=>d.push({suit:s,value:v})));
+      return d.sort(()=>Math.random()-0.5);
+    }
+    function getCardValue(c){ if(['J','Q','K'].includes(c.value))return 10; if(c.value==='A')return 11; return +c.value; }
+    function calculateTotal(h){
+      let t=0, ac=0; h.forEach(c=>{t+=getCardValue(c); if(c.value==='A') ac++});
+      while(t>21 && ac>0){t-=10; ac--;} return t;
+    }
+    function displayHand(el,h){ el.innerHTML=''; h.forEach(c=>{
+      const e=document.createElement('div'); e.className='card'; e.textContent=`${c.value}${c.suit}`; el.appendChild(e);
+    }) }
+    function updateBJ(){
+      displayHand(playerCardsEl,playerHand); displayHand(dealerCardsEl,dealerHand);
+      playerTotalEl.textContent='Total: '+calculateTotal(playerHand);
+      dealerTotalEl.textContent=gameOver?'Total: '+calculateTotal(dealerHand):'Total: ?';
+    }
+    function bjHit(){ if(gameOver) return; flipSound.play(); playerHand.push(deck.pop()); updateBJ(); if(calculateTotal(playerHand)>21) bjEnd(); }
+    function bjStand(){ if(gameOver) return; flipSound.play(); while(calculateTotal(dealerHand)<17) dealerHand.push(deck.pop()); bjEnd(); }
+    function bjEnd(){
+      gameOver=true; updateBJ();
+      const p=calculateTotal(playerHand), d=calculateTotal(dealerHand);
+      if(p>21){ resultEl.textContent='You Busted! 💥 Dealer Wins!'; loseSound.play(); }
+      else if(d>21){ resultEl.textContent="Dealer Busted! 🎉 You Win!"; winSound.play(); }
+      else if(p>d){ resultEl.textContent='You Win! 🎉'; winSound.play(); }
+      else if(p<d){ resultEl.textContent='Dealer Wins! 😢'; loseSound.play(); }
+      else{ resultEl.textContent='Push (Tie)! 🤝'; drawSound.play(); }
+    }
+    function bjReset(){ deck=createDeck(); playerHand=[deck.pop(),deck.pop()]; dealerHand=[deck.pop()]; gameOver=false; resultEl.textContent=''; updateBJ(); }
+    bjReset();
+  </script>
+
+  <!-- Mines Script -->
+  <script>
+    // Mines Logic (1:1 aus deinem Beispiel)
+    const user = localStorage.getItem('username');
+    let isGameActive=false, safeTiles=[], clickedTiles=new Set(), bet, mines, multiplier;
+    function updateBalanceDisplay(){
+      const bal=+localStorage.getItem('balance_' + user)||0;
+      document.getElementById('balanceDisplay').textContent=bal.toLocaleString();
+    }
+    if(!localStorage.getItem('balance_' + user)) localStorage.setItem('balance_'+user,100000);
+    updateBalanceDisplay();
+
+    function startMines(){
+      bet=+document.getElementById('betAmount').value; mines=+document.getElementById('mineCount').value;
+      const bal=+localStorage.getItem('balance_'+user);
+      if(bet<=0||bet>bal) return alert('Invalid bet.');
+      localStorage.setItem('balance_'+user, bal-bet);
+      updateBalanceDisplay();
+      document.getElementById('multiplier').textContent='1.00x';
+      multiplier=1; clickedTiles=new Set(); isGameActive=true;
+      generateGrid();
+    }
+    function generateGrid(){
+      const grid=document.getElementById('grid'); grid.innerHTML='';
+      safeTiles=Array(25).fill('safe');
+      for(let i=0;i<mines;i++){
+        let idx; do{ idx=Math.floor(Math.random()*25); } while(safeTiles[idx]==='mine');
+        safeTiles[idx]='mine';
+      }
+      for(let i=0;i<25;i++){
+        const cell=document.createElement('div'); cell.className='cell';
+        cell.onclick=()=>handleClick(i,cell); grid.appendChild(cell);
+      }
+    }
+    function handleClick(i,cell){
+      if(!isGameActive||clickedTiles.has(i)) return;
+      clickedTiles.add(i);
+      if(safeTiles[i]==='mine'){
+        cell.classList.add('mine'); cell.innerHTML='💣'; isGameActive=false;
+        alert('💥 You hit a mine! Game over.');
+      } else {
+        cell.classList.add('safe'); cell.innerHTML='💎';
+        multiplier=(multiplier*1.15).toFixed(2);
+        document.getElementById('multiplier').textContent=multiplier+'x';
+      }
+    }
+    function cashout(){
+      if(!isGameActive||clickedTiles.size===0) return;
+      const payout=Math.floor(bet*multiplier);
+      const bal=+localStorage.getItem('balance_'+user);
+      localStorage.setItem('balance_'+user, bal+payout);
+      updateBalanceDisplay(); showCashout(payout); isGameActive=false;
+    }
+    function showCashout(a){
+      const o=document.getElementById('cashoutMessage');
+      document.getElementById('cashoutAmount').textContent=a;
+      o.style.display='block'; setTimeout(()=>o.style.display='none',3000);
+    }
+  </script>
+
+  <!-- Chat + Tabs Script -->
+  <script type="module">
+    import { createApp } from 'https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.esm-browser.js'
+    const socket = io()
+    createApp({
+      data(){ return {
+        page: 'home',
+        username: localStorage.getItem('username')||'Guest',
+        balance: +localStorage.getItem('balance_'+localStorage.getItem('username'))||0,
+        messages: [], newMessage: ''
+      }},
+      methods:{
+        tabClass(t){ return this.page===t?'text-blue-400 font-bold':'hover:text-blue-300' },
+        sendMessage(){
+          if(this.newMessage.trim()){
+            socket.emit('message', this.newMessage)
+            this.newMessage=''
+          }
+        }
+      },
+      mounted(){
+        socket.emit('join',{ username:this.username })
+        socket.on('messages',m=>this.messages=m)
+        socket.on('message',m=>this.messages.push(m))
+      }
+    }).mount('#app')
   </script>
 </body>
 </html>
