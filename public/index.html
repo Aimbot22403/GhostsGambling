@@ -32,20 +32,21 @@
         };
       },
       methods: {
-        async register() {
-          const res = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: this.registerUsername, password: this.registerPassword }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            alert('Registered successfully! Please log in.');
-            this.page = 'login';
-          } else {
-            alert(data.error);
-          }
-        },
+async register() {
+  console.log('Registering:', this.registerUsername, this.registerPassword); // Debugging
+  const res = await fetch('/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: this.registerUsername, password: this.registerPassword }),
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert('Registered successfully! Please log in.');
+    this.page = 'login';
+  } else {
+    alert(data.error);
+  }
+},
         async login() {
           const res = await fetch('/api/login', {
             method: 'POST',

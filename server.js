@@ -9,7 +9,7 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-const PORT = process.env.PORT; // Nur den Render-Port verwenden, keinen Fallback
+const PORT = process.env.PORT; // Nur den Render-Port verwenden
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -58,6 +58,7 @@ const authMiddleware = async (req, res, next) => {
 
 // Routes
 app.post('/api/register', async (req, res) => {
+  console.log('Received register request:', req.body); // Debugging
   try {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
@@ -66,7 +67,12 @@ app.post('/api/register', async (req, res) => {
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    res.status(400).json({ error: 'Username already taken or invalid data' });
+    if (error.code === 11000) {
+      res.status(400).json({ error: 'Username already taken' });
+    } else {
+      console.error('Registration error:', error);
+      res.status(400).json({ error: 'Invalid data' });
+    }
   }
 });
 
