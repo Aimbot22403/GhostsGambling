@@ -444,7 +444,7 @@
         },
         sendMessage() {
           if (this.newMessage.trim()) {
-            socket.emit('message', this.newMessage);
+            this.socket.emit('message', this.newMessage);
             this.newMessage = '';
           }
         },
@@ -467,6 +467,17 @@
           this.fetchBalance();
           this.initializeSocket();
         }
+          socket.on('chat-message', (msg) => {
+    this.messages.push(msg);
+    this.$nextTick(() => {
+      const container = this.$refs.chatMessages;
+      container.scrollTop = container.scrollHeight;
+    });
+  });
+
+  socket.on('online-users', (users) => {
+    this.onlineUsers = users;
+  });
         // Cache DOM elements for games
         bj_elements.playerCards = document.getElementById('player-cards');
         bj_elements.dealerCards = document.getElementById('dealer-cards');
