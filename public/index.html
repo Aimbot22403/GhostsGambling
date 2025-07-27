@@ -1,28 +1,263 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Casino</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ghosts Gambling - Casino</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap" rel="stylesheet">
 
-  <!-- Tailwind & Socket.io -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
-
-  <!-- Blackjack Styles -->
+  <!-- Custom Styles -->
   <style>
-    /* ====== Blackjack ====== */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #1a1a1a;
+      color: white;
+    }
+
+    header {
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      background-color: #1a1a1a;
+      border-bottom: 1px solid #800000;
+    }
+
+    header a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+
+    .container {
+      display: flex;
+      padding: 30px;
+      gap: 30px;
+      height: calc(100vh - 70px);
+    }
+
+    .main-content {
+      width: 70%;
+      display: flex;
+      gap: 30px;
+    }
+
+    .members-panel {
+      width: 300px;
+      background-color: #1a1a1a;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #800000;
+    }
+
+    .members-panel h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #ff0000;
+    }
+
+    .members-panel ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .members-panel li {
+      padding: 5px 0;
+      font-size: 14px;
+      color: #ffffff;
+    }
+
+    .game-content {
+      flex-grow: 1;
+      background-color: #1a1a1a;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #800000;
+    }
+
+    .left-panel {
+      width: 300px;
+      background-color: #1a1a1a;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #800000;
+    }
+
+    .left-panel h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #ff0000;
+    }
+
+    .left-panel label {
+      font-size: 13px;
+      color: #ff9999;
+    }
+
+    .left-panel input,
+    .left-panel select {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0 15px;
+      border-radius: 8px;
+      border: none;
+      background-color: #2d2d2d;
+      color: white;
+    }
+
+    .left-panel button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background-color: #800000;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .left-panel .multiplier {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #ff0000;
+    }
+
+    .balance-display {
+      font-size: 14px;
+      color: #ff9999;
+      margin-bottom: 15px;
+    }
+
+    .game-board {
+      flex-grow: 1;
+      background-color: #1a1a1a;
+      padding: 30px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 1px solid #800000;
+    }
+
+    .game-board h2 {
+      font-size: 16px;
+      margin-bottom: 20px;
+      color: #ff0000;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      gap: 10px;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      background-color: #800000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      color: #ffffff;
+    }
+
+    .cell.safe {
+      background-color: #ff0000;
+    }
+
+    .cell.mine {
+      background-color: #1a1a1a;
+      color: #ff0000;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #800000;
+      color: white;
+      padding: 20px 40px;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: bold;
+      display: none;
+      z-index: 9999;
+    }
+
+    .overlay .emoji {
+      font-size: 26px;
+      margin-right: 10px;
+    }
+
     #bj-game {
-      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      background: linear-gradient(to right, #1a1a1a, #2d2d2d, #800000);
       font-family: 'Segoe UI', sans-serif;
       color: white;
       text-align: center;
       padding: 30px;
+      border-radius: 12px;
     }
-    #bj-game .hand { margin: 20px 0; }
+    #bj-game h2 {
+      color: #ff0000;
+      font-size: 24px;
+    }
+    #bj-game .hand {
+      margin: 20px 0;
+    }
     #bj-game .card {
       display: inline-block;
-      background: #1abc9c;
+      background: #ff0000;
       color: black;
       padding: 10px 15px;
       margin: 5px;
@@ -34,261 +269,455 @@
       font-size: 16px;
       margin: 10px;
       border: none;
-      background-color: #2980b9;
+      background-color: #800000;
       color: white;
       border-radius: 6px;
       cursor: pointer;
     }
-    #bj-game button:hover { background-color: #1f6391; }
-    #bj-result { font-size: 20px; margin-top: 20px; }
-  </style>
-
-  <!-- Mines Styles -->
-  <style>
-    /* ====== Mines ====== */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap');
-    .mines-container * { box-sizing: border-box; }
-    .mines-container {
-      font-family: 'Inter', sans-serif;
-      color: white;
-      display: flex;
-      gap: 30px;
+    #bj-game button:hover {
+      background-color: #660000;
     }
-    .mines-left {
-      width: 300px;
-      background: #1e293b;
+    #bj-game input {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px;
+      border: none;
+      background-color: #2d2d2d;
+      color: white;
+      border-radius: 6px;
+    }
+    #bj-game #result {
+      font-size: 20px;
+      margin-top: 20px;
+    }
+
+    .chat-container {
+      width: 100%;
+      height: 100%;
+      background-color: #1a1a1a;
       padding: 20px;
       border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #800000;
     }
-    .mines-left h2 { font-size: 18px; margin-bottom: 15px; }
-    .mines-left label { font-size: 13px; color: #cbd5e1; }
-    .mines-left input, .mines-left select {
-      width: 100%; padding: 10px; margin: 8px 0 15px;
-      border-radius: 8px; border: none; background: #334155; color: white;
+    .chat-messages {
+      height: 80%;
+      overflow-y: auto;
+      background-color: #2d2d2d;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
     }
-    .mines-left button {
-      width: 100%; padding: 10px; border: none; border-radius: 8px;
-      background: #3b82f6; color: white; font-weight: bold; cursor: pointer;
-      margin-bottom: 10px;
+    .chat-messages p {
+      margin: 5px 0;
+      color: #ffffff;
     }
-    .mines-left .multiplier { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
-    .mines-left .balance-display { font-size: 14px; color: #cbd5e1; margin-bottom: 15px; }
-
-    .mines-board {
-      flex-grow: 1; background: #1e293b; padding: 30px; border-radius: 12px;
-      display: flex; flex-direction: column; align-items: center;
+    .chat-input {
+      width: 100%;
+      display: flex;
+      gap: 10px;
     }
-    .mines-board h2 { font-size: 16px; margin-bottom: 20px; }
-    .mines-grid {
-      display: grid; grid-template-columns: repeat(5, 60px); gap: 10px;
+    .chat-input input {
+      flex-grow: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background-color: #2d2d2d;
+      color: white;
+      font-size: 14px;
     }
-    .cell {
-      width: 60px; height: 60px; border-radius: 10px;
-      background: #334155; display: flex; align-items: center;
-      justify-content: center; font-size: 24px; cursor: pointer;
-      transition: background-color 0.2s;
+    .chat-input button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #800000;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
     }
-    .cell.safe { background: #22c55e; }
-    .cell.mine { background: #ef4444; }
-
-    .overlay {
-      position: fixed; top: 30%; left: 50%;
-      transform: translateX(-50%);
-      background: #0ea5e9; color: black;
-      padding: 20px 40px; border-radius: 12px;
-      font-size: 20px; font-weight: bold;
-      display: none; z-index: 9999;
+    .chat-input button:hover {
+      background-color: #660000;
     }
-    .overlay .emoji { font-size: 26px; margin-right: 10px; }
   </style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col min-h-screen">
+<body>
+  <header>
+    <div>
+      <a href="#" @click.prevent="page='home'">🏠 Home</a>
+      <a href="#" @click.prevent="page='blackjack'">🃏 Blackjack</a>
+      <a href="#" @click.prevent="page='mines'">💣 Mines</a>
+    </div>
+    <a href="#" @click.prevent="logout">🚪 Logout</a>
+  </header>
 
-  <!-- App Container -->
-  <div id="app" class="flex-1 flex flex-col">
-
-    <!-- Tabs -->
-    <nav class="bg-gray-800 flex justify-around p-3">
-      <button @click="page='home'" :class="tabClass('home')">🏠 Home</button>
-      <button @click="page='blackjack'" :class="tabClass('blackjack')">🃏 Blackjack</button>
-      <button @click="page='mines'" :class="tabClass('mines')">💣 Mines</button>
-    </nav>
-
-    <!-- Content -->
-    <main class="p-4 flex-1 overflow-auto">
-      <!-- Home -->
-      <div v-show="page==='home'" class="text-center">
-        <h1 class="text-2xl font-bold mb-4">Welcome, {{ username }}!</h1>
-        <p class="text-gray-400">Balance: {{ balance }} Coins</p>
-        <p class="mt-4 text-gray-500">Wähle ein Spiel oben aus oder chatte unten!</p>
+  <div class="container" id="app">
+    <!-- Main Content (70%) -->
+    <div class="main-content">
+      <div class="members-panel">
+        <h2>👥 Online Members</h2>
+        <ul>
+          <li v-for="user in onlineUsers" :key="user">{{ user }}</li>
+        </ul>
       </div>
-
-      <!-- Blackjack -->
-      <div v-show="page==='blackjack'" id="bj-game">
-        <h1>🃏 Blackjack - Hans Has Luck</h1>
-        <div class="hand">
-          <h2>Your Hand</h2>
-          <div id="player-cards"></div>
-          <p id="player-total"></p>
+      <div class="game-content">
+        <!-- Home -->
+        <div v-show="page==='home'" class="text-center">
+          <h2 style="font-size: 24px; color: #ff0000; margin-bottom: 15px;">Welcome, {{ username }}!</h2>
+          <p style="font-size: 18px; margin-bottom: 10px;">Balance: <span id="homeBalance">{{ balance }}</span> Coins</p>
+          <p style="font-size: 14px; color: #ff9999;">Choose a game above or join the chat on the right!</p>
         </div>
-        <div class="hand">
-          <h2>Dealer's Hand</h2>
-          <div id="dealer-cards"></div>
-          <p id="dealer-total"></p>
-        </div>
-        <button onclick="bjHit()">Hit</button>
-        <button onclick="bjStand()">Stand</button>
-        <button onclick="bjReset()">New Game</button>
-        <p id="bj-result"></p>
-      </div>
 
-      <!-- Mines -->
-      <div v-show="page==='mines'" class="mines-container">
-        <div class="mines-left">
-          <h2>🧪 Mines Spiel</h2>
-          <label>Einsatz</label>
-          <input type="number" id="betAmount" value="1000">
-          <label>Anzahl Minen</label>
-          <select id="mineCount">
-            <option>1</option><option>2</option><option>3</option><option>5</option><option>10</option>
-          </select>
-          <div class="multiplier" id="multiplier">1.00x</div>
-          <div class="balance-display">
-            💰 Balance: <span id="balanceDisplay">0</span> Coins
+        <!-- Blackjack -->
+        <div v-show="page==='blackjack'" id="bj-game">
+          <h2>🃏 Blackjack - Hans Has Luck</h2>
+          <div class="hand">
+            <label style="font-size: 16px; margin-right: 10px;">Bet:</label>
+            <input type="number" id="bjBet" v-model.number="bjBet" min="1">
           </div>
-          <button onclick="startMines()">🎮 Start Game</button>
-          <button onclick="cashout()">💸 Auszahlen</button>
+          <div class="hand">
+            <h3>Your Hand</h3>
+            <div id="player-cards"></div>
+            <p id="player-total"></p>
+          </div>
+          <div class="hand">
+            <h3>Dealer's Hand</h3>
+            <div id="dealer-cards"></div>
+            <p id="dealer-total"></p>
+          </div>
+          <div>
+            <button onclick="hit()">Hit</button>
+            <button onclick="stand()">Stand</button>
+            <button onclick="resetGame()">New Game</button>
+          </div>
+          <p id="result"></p>
         </div>
-        <div class="mines-board">
-          <h2>🧪 Feld auswählen</h2>
-          <div class="mines-grid" id="grid"></div>
-        </div>
-        <div class="overlay" id="cashoutMessage">
-          <span class="emoji">🎉</span> Ausgezahlt! +<span id="cashoutAmount"></span> Coins!
-        </div>
-      </div>
-    </main>
 
-    <!-- Chat -->
-    <footer class="bg-gray-800 p-4 border-t border-gray-700">
-      <h2 class="font-bold mb-2">💬 Chat</h2>
-      <div class="h-48 overflow-y-auto bg-gray-700 rounded p-2 mb-2">
-        <p v-for="msg in messages" class="text-sm mb-1">
-          <strong>{{ msg.username }}</strong>: {{ msg.message }}
-          <span class="text-xs text-gray-400">({{ new Date(msg.timestamp).toLocaleTimeString() }})</span>
-        </p>
+        <!-- Mines -->
+        <div v-show="page==='mines'" class="container">
+          <div class="left-panel">
+            <h2>🧪 Mines Spiel</h2>
+            <label>Einsatz</label>
+            <input type="number" id="betAmount" v-model.number="betAmount" value="1000">
+            <label>Anzahl Minen</label>
+            <select id="mineCount" v-model.number="mineCount">
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>5</option>
+              <option>10</option>
+            </select>
+            <div class="multiplier" id="multiplier">1.00x</div>
+            <div class="balance-display">
+              💰 Balance: <span id="minesBalance">{{ balance }}</span> Coins
+            </div>
+            <button onclick="startGame()">🎮 Start Game</button>
+            <button onclick="cashout()">💸 Auszahlen</button>
+          </div>
+          <div class="game-board">
+            <h2>🧪 Feld auswählen</h2>
+            <div class="grid" id="grid"></div>
+          </div>
+        </div>
       </div>
-      <div class="flex gap-2">
-        <input v-model="newMessage" @keyup.enter="sendMessage"
-               class="flex-1 p-2 bg-gray-600 rounded" placeholder="Type a message..."/>
-        <button @click="sendMessage" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">Send</button>
+    </div>
+
+    <!-- Chat Area (30%) -->
+    <aside class="w-2/5">
+      <div class="chat-container">
+        <h3 style="font-size: 18px; margin-bottom: 15px; color: #ff0000;">💬 Chat</h3>
+        <div class="chat-messages">
+          <p v-for="msg in messages" :key="msg._id">
+            <strong>{{ msg.username }}</strong>: {{ msg.message }}
+            <span style="color: #ff9999; font-size: 12px;"> ({{ new Date(msg.timestamp).toLocaleTimeString() }})</span>
+          </p>
+        </div>
+        <div class="chat-input">
+          <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Type a message...">
+          <button @click="sendMessage">Send</button>
+        </div>
       </div>
-    </footer>
+    </aside>
+  </div>
+
+  <div class="overlay" id="cashoutMessage">
+    <span class="emoji">🎉</span> Ausgezahlt! +<span id="cashoutAmount"></span> Coins!
   </div>
 
   <!-- Blackjack Script -->
   <script>
-    // Blackjack Logic (1:1 aus deinem Beispiel)
-    const playerCardsEl = document.getElementById('player-cards'),
-          dealerCardsEl = document.getElementById('dealer-cards'),
-          playerTotalEl = document.getElementById('player-total'),
-          dealerTotalEl = document.getElementById('dealer-total'),
-          resultEl = document.getElementById('bj-result');
-    const flipSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_533c09b3e4.mp3'),
-          winSound = new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_8a3c1f1e79.mp3'),
-          loseSound = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_b20b7f6e98.mp3'),
-          drawSound = new Audio('https://cdn.pixabay.com/audio/2022/03/22/audio_ebedcbfdd5.mp3');
-    let deck = [], playerHand = [], dealerHand = [], gameOver = false;
+    const playerCardsEl = document.getElementById('player-cards')
+    const dealerCardsEl = document.getElementById('dealer-cards')
+    const playerTotalEl = document.getElementById('player-total')
+    const dealerTotalEl = document.getElementById('dealer-total')
+    const resultEl = document.getElementById('result')
+    const bjBetInput = document.getElementById('bjBet')
+
+    const flipSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_533c09b3e4.mp3')
+    const winSound = new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_8a3c1f1e79.mp3')
+    const loseSound = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_b20b7f6e98.mp3')
+    const drawSound = new Audio('https://cdn.pixabay.com/audio/2022/03/22/audio_ebedcbfdd5.mp3')
+
+    let deck = []
+    let playerHand = []
+    let dealerHand = []
+    let gameOver = false
+    let currentBalance = 0
+    let bjBet = 100
+
+    async function fetchBalance() {
+      const token = localStorage.getItem('token')
+      if (!token) return 0
+      const res = await fetch('/api/balance', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      return data.balance || 0
+    }
+
     function createDeck() {
-      const suits=['♠','♥','♣','♦'], vals=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], d=[];
-      suits.forEach(s=>vals.forEach(v=>d.push({suit:s,value:v})));
-      return d.sort(()=>Math.random()-0.5);
+      const suits = ['♠', '♥', '♣', '♦']
+      const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+      const deck = []
+      for (let suit of suits) {
+        for (let value of values) {
+          deck.push({ suit, value })
+        }
+      }
+      return deck.sort(() => Math.random() - 0.5)
     }
-    function getCardValue(c){ if(['J','Q','K'].includes(c.value))return 10; if(c.value==='A')return 11; return +c.value; }
-    function calculateTotal(h){
-      let t=0, ac=0; h.forEach(c=>{t+=getCardValue(c); if(c.value==='A') ac++});
-      while(t>21 && ac>0){t-=10; ac--;} return t;
+
+    function getCardValue(card) {
+      if (['J', 'Q', 'K'].includes(card.value)) return 10
+      if (card.value === 'A') return 11
+      return parseInt(card.value)
     }
-    function displayHand(el,h){ el.innerHTML=''; h.forEach(c=>{
-      const e=document.createElement('div'); e.className='card'; e.textContent=`${c.value}${c.suit}`; el.appendChild(e);
-    }) }
-    function updateBJ(){
-      displayHand(playerCardsEl,playerHand); displayHand(dealerCardsEl,dealerHand);
-      playerTotalEl.textContent='Total: '+calculateTotal(playerHand);
-      dealerTotalEl.textContent=gameOver?'Total: '+calculateTotal(dealerHand):'Total: ?';
+
+    function calculateTotal(hand) {
+      let total = 0
+      let aces = 0
+      for (let card of hand) {
+        const val = getCardValue(card)
+        total += val
+        if (card.value === 'A') aces++
+      }
+      while (total > 21 && aces > 0) {
+        total -= 10
+        aces--
+      }
+      return total
     }
-    function bjHit(){ if(gameOver) return; flipSound.play(); playerHand.push(deck.pop()); updateBJ(); if(calculateTotal(playerHand)>21) bjEnd(); }
-    function bjStand(){ if(gameOver) return; flipSound.play(); while(calculateTotal(dealerHand)<17) dealerHand.push(deck.pop()); bjEnd(); }
-    function bjEnd(){
-      gameOver=true; updateBJ();
-      const p=calculateTotal(playerHand), d=calculateTotal(dealerHand);
-      if(p>21){ resultEl.textContent='You Busted! 💥 Dealer Wins!'; loseSound.play(); }
-      else if(d>21){ resultEl.textContent="Dealer Busted! 🎉 You Win!"; winSound.play(); }
-      else if(p>d){ resultEl.textContent='You Win! 🎉'; winSound.play(); }
-      else if(p<d){ resultEl.textContent='Dealer Wins! 😢'; loseSound.play(); }
-      else{ resultEl.textContent='Push (Tie)! 🤝'; drawSound.play(); }
+
+    function displayHand(el, hand) {
+      el.innerHTML = ''
+      hand.forEach(card => {
+        const cardEl = document.createElement('div')
+        cardEl.className = 'card'
+        cardEl.textContent = `${card.value}${card.suit}`
+        el.appendChild(cardEl)
+      })
     }
-    function bjReset(){ deck=createDeck(); playerHand=[deck.pop(),deck.pop()]; dealerHand=[deck.pop()]; gameOver=false; resultEl.textContent=''; updateBJ(); }
-    bjReset();
+
+    async function update() {
+      displayHand(playerCardsEl, playerHand)
+      displayHand(dealerCardsEl, dealerHand)
+      playerTotalEl.textContent = 'Total: ' + calculateTotal(playerHand)
+      dealerTotalEl.textContent = gameOver ? 'Total: ' + calculateTotal(dealerHand) : 'Total: ?'
+      currentBalance = await fetchBalance()
+      document.getElementById('homeBalance').textContent = currentBalance.toLocaleString()
+      document.getElementById('minesBalance').textContent = currentBalance.toLocaleString()
+      bjBet = Math.min(bjBet, currentBalance)
+      bjBetInput.value = bjBet
+    }
+
+    function hit() {
+      if (gameOver || bjBet > currentBalance) return alert('Insufficient balance or game over!')
+      flipSound.play()
+      playerHand.push(deck.pop())
+      update()
+      if (calculateTotal(playerHand) > 21) endGame()
+    }
+
+    function stand() {
+      if (gameOver || bjBet > currentBalance) return alert('Insufficient balance or game over!')
+      flipSound.play()
+      while (calculateTotal(dealerHand) < 17) {
+        dealerHand.push(deck.pop())
+      }
+      endGame()
+    }
+
+    function endGame() {
+      gameOver = true
+      const playerTotal = calculateTotal(playerHand)
+      const dealerTotal = calculateTotal(dealerHand)
+
+      update()
+
+      if (playerTotal > 21) {
+        resultEl.textContent = 'You Busted! 💥 Dealer Wins!'
+        loseSound.play()
+        updateBalance(-bjBet)
+      } else if (dealerTotal > 21) {
+        resultEl.textContent = 'Dealer Busted! 🎉 You Win!'
+        winSound.play()
+        updateBalance(bjBet)
+      } else if (playerTotal > dealerTotal) {
+        resultEl.textContent = 'You Win! 🎉'
+        winSound.play()
+        updateBalance(bjBet)
+      } else if (playerTotal < dealerTotal) {
+        resultEl.textContent = 'Dealer Wins! 😢'
+        loseSound.play()
+        updateBalance(-bjBet)
+      } else {
+        resultEl.textContent = 'Push (Tie)! 🤝'
+        drawSound.play()
+      }
+    }
+
+    function resetGame() {
+      if (bjBet > currentBalance) return alert('Insufficient balance!')
+      deck = createDeck()
+      playerHand = [deck.pop(), deck.pop()]
+      dealerHand = [deck.pop()]
+      gameOver = false
+      resultEl.textContent = ''
+      update()
+    }
+
+    async function updateBalance(change) {
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/balance', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      currentBalance = data.balance
+      const newBalance = currentBalance + change
+      const updateRes = await fetch('/api/balance', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance: newBalance })
+      })
+      if (!updateRes.ok) {
+        alert('Error updating balance. Data may have been modified.')
+        await fetchBalance()
+      }
+      await update()
+    }
+
+    resetGame()
   </script>
 
   <!-- Mines Script -->
   <script>
-    // Mines Logic (1:1 aus deinem Beispiel)
-    const user = localStorage.getItem('username');
-    let isGameActive=false, safeTiles=[], clickedTiles=new Set(), bet, mines, multiplier;
-    function updateBalanceDisplay(){
-      const bal=+localStorage.getItem('balance_' + user)||0;
-      document.getElementById('balanceDisplay').textContent=bal.toLocaleString();
-    }
-    if(!localStorage.getItem('balance_' + user)) localStorage.setItem('balance_'+user,100000);
-    updateBalanceDisplay();
+    let isGameActive = false
+    let safeTiles = []
+    let clickedTiles = new Set()
+    let bet = 0
+    let mines = 3
+    let multiplier = 1
+    let currentBalance = 0
 
-    function startMines(){
-      bet=+document.getElementById('betAmount').value; mines=+document.getElementById('mineCount').value;
-      const bal=+localStorage.getItem('balance_'+user);
-      if(bet<=0||bet>bal) return alert('Invalid bet.');
-      localStorage.setItem('balance_'+user, bal-bet);
-      updateBalanceDisplay();
-      document.getElementById('multiplier').textContent='1.00x';
-      multiplier=1; clickedTiles=new Set(); isGameActive=true;
-      generateGrid();
+    async function fetchBalance() {
+      const token = localStorage.getItem('token')
+      if (!token) return 0
+      const res = await fetch('/api/balance', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      return data.balance || 0
     }
-    function generateGrid(){
-      const grid=document.getElementById('grid'); grid.innerHTML='';
-      safeTiles=Array(25).fill('safe');
-      for(let i=0;i<mines;i++){
-        let idx; do{ idx=Math.floor(Math.random()*25); } while(safeTiles[idx]==='mine');
-        safeTiles[idx]='mine';
+
+    async function updateBalance(change) {
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/balance', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      currentBalance = data.balance
+      const newBalance = currentBalance + change
+      const updateRes = await fetch('/api/balance', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance: newBalance })
+      })
+      if (!updateRes.ok) {
+        alert('Error updating balance. Data may have been modified.')
+        return await fetchBalance()
       }
-      for(let i=0;i<25;i++){
-        const cell=document.createElement('div'); cell.className='cell';
-        cell.onclick=()=>handleClick(i,cell); grid.appendChild(cell);
+      return await fetchBalance()
+    }
+
+    function startGame() {
+      fetchBalance().then(async (balance) => {
+        bet = parseInt(document.getElementById('betAmount').value)
+        mines = parseInt(document.getElementById('mineCount').value)
+        if (bet <= 0 || bet > balance) return alert('Invalid bet.')
+        const newBalance = await updateBalance(-bet)
+        document.getElementById('minesBalance').textContent = newBalance.toLocaleString()
+        document.getElementById('multiplier').textContent = '1.00x'
+        multiplier = 1
+        clickedTiles = new Set()
+        isGameActive = true
+        generateGrid()
+      })
+    }
+
+    function generateGrid() {
+      const grid = document.getElementById('grid')
+      grid.innerHTML = ''
+      safeTiles = Array(25).fill('safe')
+      for (let i = 0; i < mines; i++) {
+        let idx
+        do {
+          idx = Math.floor(Math.random() * 25)
+        } while (safeTiles[idx] === 'mine')
+        safeTiles[idx] = 'mine'
+      }
+
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement('div')
+        cell.className = 'cell'
+        cell.onclick = () => handleClick(i, cell)
+        grid.appendChild(cell)
       }
     }
-    function handleClick(i,cell){
-      if(!isGameActive||clickedTiles.has(i)) return;
-      clickedTiles.add(i);
-      if(safeTiles[i]==='mine'){
-        cell.classList.add('mine'); cell.innerHTML='💣'; isGameActive=false;
-        alert('💥 You hit a mine! Game over.');
+
+    function handleClick(index, cell) {
+      if (!isGameActive || clickedTiles.has(index)) return
+      clickedTiles.add(index)
+      if (safeTiles[index] === 'mine') {
+        cell.classList.add('mine')
+        cell.innerHTML = '💣'
+        isGameActive = false
+        alert('💥 You hit a mine! Game over.')
       } else {
-        cell.classList.add('safe'); cell.innerHTML='💎';
-        multiplier=(multiplier*1.15).toFixed(2);
-        document.getElementById('multiplier').textContent=multiplier+'x';
+        cell.classList.add('safe')
+        cell.innerHTML = '💎'
+        multiplier = (multiplier * 1.15).toFixed(2)
+        document.getElementById('multiplier').textContent = `${multiplier}x`
       }
     }
-    function cashout(){
-      if(!isGameActive||clickedTiles.size===0) return;
-      const payout=Math.floor(bet*multiplier);
-      const bal=+localStorage.getItem('balance_'+user);
-      localStorage.setItem('balance_'+user, bal+payout);
-      updateBalanceDisplay(); showCashout(payout); isGameActive=false;
+
+    function cashout() {
+      if (!isGameActive || clickedTiles.size === 0) return
+      const payout = Math.floor(bet * multiplier)
+      updateBalance(payout).then(() => {
+        showCashout(payout)
+        isGameActive = false
+      })
     }
-    function showCashout(a){
-      const o=document.getElementById('cashoutMessage');
-      document.getElementById('cashoutAmount').textContent=a;
-      o.style.display='block'; setTimeout(()=>o.style.display='none',3000);
+
+    function showCashout(amount) {
+      const overlay = document.getElementById('cashoutMessage')
+      document.getElementById('cashoutAmount').textContent = amount.toLocaleString()
+      overlay.style.display = 'block'
+      setTimeout(() => {
+        overlay.style.display = 'none'
+      }, 3000)
     }
   </script>
 
@@ -296,26 +725,59 @@
   <script type="module">
     import { createApp } from 'https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.esm-browser.js'
     const socket = io()
+
+    async function fetchBalance() {
+      const token = localStorage.getItem('token')
+      if (!token) return 0
+      const res = await fetch('/api/balance', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      return data.balance || 0
+    }
+
+    function logout() {
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+    }
+
     createApp({
-      data(){ return {
+      data() { return {
         page: 'home',
-        username: localStorage.getItem('username')||'Guest',
-        balance: +localStorage.getItem('balance_'+localStorage.getItem('username'))||0,
-        messages: [], newMessage: ''
+        username: localStorage.getItem('username') || 'Guest',
+        balance: 0,
+        messages: [],
+        newMessage: '',
+        bjBet: 100,
+        betAmount: 1000,
+        mineCount: 3,
+        onlineUsers: []
       }},
-      methods:{
-        tabClass(t){ return this.page===t?'text-blue-400 font-bold':'hover:text-blue-300' },
-        sendMessage(){
-          if(this.newMessage.trim()){
-            socket.emit('message', this.newMessage)
-            this.newMessage=''
-          }
+      computed: {
+        tabClass() {
+          return (tab) => this.page === tab ? 'text-ff0000 font-bold' : 'hover:text-ff9999'
         }
       },
-      mounted(){
-        socket.emit('join',{ username:this.username })
-        socket.on('messages',m=>this.messages=m)
-        socket.on('message',m=>this.messages.push(m))
+      methods: {
+        async sendMessage() {
+          if (this.newMessage.trim()) {
+            socket.emit('message', this.newMessage)
+            this.newMessage = ''
+          }
+        },
+        async updateBalanceDisplay() {
+          this.balance = await fetchBalance()
+          document.getElementById('homeBalance').textContent = this.balance.toLocaleString()
+          document.getElementById('minesBalance').textContent = this.balance.toLocaleString()
+        }
+      },
+      async mounted() {
+        await this.updateBalanceDisplay()
+        socket.emit('join', { username: this.username, token: localStorage.getItem('token') })
+        socket.on('messages', m => this.messages = m)
+        socket.on('message', m => this.messages.push(m))
+        socket.on('users', users => this.onlineUsers = users)
+        setInterval(this.updateBalanceDisplay, 5000)
       }
     }).mount('#app')
   </script>
