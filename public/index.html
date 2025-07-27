@@ -164,7 +164,6 @@
     </button>
   </div>
 
-  <!-- Online-User-Anzeige -->
   <div class="mt-2 text-sm" style="margin-top: 10px; color: #aaaaaa;">
     Online: <span style="color: #00ff00;">{{ onlineUsers.join(', ') || 'No one online' }}</span>
   </div>
@@ -180,12 +179,9 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
 
-  <!-- GAME SCRIPTS (global scope) -->
   <script>
-    // Make Vue app instance globally accessible for game scripts
     let vue_app; 
     
-    // --- Blackjack ---
     const bj_elements = {
         playerCards: null, dealerCards: null, playerTotal: null, 
         dealerTotal: null, result: null
@@ -269,7 +265,6 @@
         if (bj_calculateTotal(bj_playerHand) === 21) bj_endGame();
     }
 
-    // --- Mines ---
     let mines_isGameActive = false;
     let mines_safeTiles = [];
     let mines_clickedTiles = new Set();
@@ -330,162 +325,173 @@
     }
   </script>
 
-  <!-- VUE APP SCRIPT -->
   <script>
-    vue_app = Vue.createApp({
-      data() {
-        return {
-          page: localStorage.getItem('token') ? 'home' : 'login',
-          token: localStorage.getItem('token') || null,
-          username: localStorage.getItem('username') || 'Guest',
-          loginUsername: '', loginPassword: '',
-          registerUsername: '', registerPassword: '',
-          balance: 0,
-          messages: [],
-          newMessage: '',
-          onlineUsers: [],
-          socket: null,
-          bjBet: 100,
-          betAmount: 100,
-          mineCount: 3
-        }
-      },
-      watch: {
-          messages() { this.$nextTick(() => { this.$refs.chatMessages.scrollTop = this.$refs.chatMessages.scrollHeight; }); }
-      },
-      methods: {
-        async register() {
-          try {
-            const res = await fetch('/api/register', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username: this.registerUsername, password: this.registerPassword }),
-            });
-            const data = await res.json();
-            if (res.ok) {
-              alert('Registered successfully! Please log in.');
-              this.page = 'login';
-            } else {
-              console.error('Registration failed:', data);
-              alert(data.error || 'Registration failed. Check console for details.');
-            }
-          } catch(err) {
-            console.error('A network error occurred during registration:', err);
-            alert('A network error occurred during registration.');
-          }
-        },
-        async login() {
-          try {
-            const res = await fetch('/api/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username: this.loginUsername, password: this.loginPassword }),
-            });
-            const data = await res.json();
-            console.log('Login response:', data); // DEBUG
-            if (res.ok && data.token) {
-              this.token = data.token;
-              this.username = data.username;
-              this.balance = data.balance;
-              localStorage.setItem('token', data.token);
-              localStorage.setItem('username', data.username);
-              this.page = 'home';
-              this.initializeSocket();
-            } else {
-              console.error('Login failed:', data);
-              alert(data.error || 'Login failed. Check console for details.');
-            }
-          } catch(err) {
-            console.error('A network error occurred during login:', err);
-            alert('An error occurred during login. Check console.');
-          }
-        },
-        logout() {
-          localStorage.removeItem('token');
-          localStorage.removeItem('username');
-          this.token = null;
-          this.username = 'Guest';
-          this.page = 'login';
-          if (this.socket) this.socket.disconnect();
-        },
-        async updateBalance(change) {
-            if (!this.token) return;
-            try {
-                const res = await fetch('/api/balance', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${this.token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ change: change })
-                });
-                const data = await res.json();
-                if(res.ok){
-                    this.balance = data.balance;
-                } else {
-                    alert('Error updating balance: ' + data.error);
-                    this.fetchBalance();
-                }
-            } catch (error) {
-                console.error("Failed to update balance:", error);
-                alert('Failed to update balance.');
-            }
-        },
-        async fetchBalance() {
-            if (!this.token) return;
-            try {
-                const res = await fetch('/api/balance', { headers: { 'Authorization': `Bearer ${this.token}` } });
-                if(res.status === 403 || res.status === 401) { // Token invalid
-                    this.logout();
-                    return;
-                }
-                const data = await res.json();
-                this.balance = data.balance || 0;
-            } catch (error) {
-                console.error("Could not fetch balance:", error);
-            }
-        },
-        sendMessage() {
-          if (this.newMessage.trim()) {
-            this.socket.emit('message', this.newMessage);
-            this.newMessage = '';
-          }
-        },
-        initializeSocket() {
-            if(this.socket) this.socket.disconnect();
-            this.socket = io({ auth: { token: this.token } });
-            this.socket.on('connect', () => {
-                console.log('Socket connected!');
-                this.socket.emit('join', { username: this.username });
-            });
-        socket.on('messages', messages => (this.messages = messages));
-        socket.on('message', message => this.messages.push(message));
-        socket.on('onlineUsers', users => (this.onlineUsers = users));
-        }
-      },
-      mounted() {
-        vue_app = this; // Make app instance global
-        if (this.token) {
-          this.page = 'home';
-          this.fetchBalance();
-          this.initializeSocket();
-        }
-          socket.on('chat-message', (msg) => {
-    this.messages.push(msg);
-    this.$nextTick(() => {
-      const container = this.$refs.chatMessages;
-      container.scrollTop = container.scrollHeight;
-    });
-  });
-
-  socket.on('online-users', (users) => {
-    this.onlineUsers = users;
-  });
-        // Cache DOM elements for games
-        bj_elements.playerCards = document.getElementById('player-cards');
-        bj_elements.dealerCards = document.getElementById('dealer-cards');
-        bj_elements.playerTotal = document.getElementById('player-total');
-        bj_elements.dealerTotal = document.getElementById('dealer-total');
-        bj_elements.result = document.getElementById('result');
+  vue_app = Vue.createApp({
+    data() {
+      return {
+        page: localStorage.getItem('token') ? 'home' : 'login',
+        token: localStorage.getItem('token') || null,
+        username: localStorage.getItem('username') || 'Guest',
+        loginUsername: '', loginPassword: '',
+        registerUsername: '', registerPassword: '',
+        balance: 0,
+        messages: [],
+        newMessage: '',
+        onlineUsers: [],
+        socket: null,
+        bjBet: 100,
+        betAmount: 100,
+        mineCount: 3
+      };
+    },
+    watch: {
+      messages() {
+        this.$nextTick(() => {
+          this.$refs.chatMessages.scrollTop = this.$refs.chatMessages.scrollHeight;
+        });
       }
-    }).mount('#app');
-  </script>
+    },
+    methods: {
+      async register() {
+        try {
+          const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: this.registerUsername, password: this.registerPassword }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert('Registered successfully! Please log in.');
+            this.page = 'login';
+          } else {
+            console.error('Registration failed:', data);
+            alert(data.error || 'Registration failed. Check console for details.');
+          }
+        } catch (err) {
+          console.error('A network error occurred during registration:', err);
+          alert('A network error occurred during registration.');
+        }
+      },
+      async login() {
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: this.loginUsername, password: this.loginPassword }),
+          });
+          const data = await res.json();
+          console.log('Login response:', data);
+          if (res.ok && data.token) {
+            this.token = data.token;
+            this.username = data.username;
+            this.balance = data.balance;
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('username', data.username);
+            this.page = 'home';
+            this.initializeSocket();
+          } else {
+            console.error('Login failed:', data);
+            alert(data.error || 'Login failed. Check console for details.');
+          }
+        } catch (err) {
+          console.error('A network error occurred during login:', err);
+          alert('An error occurred during login. Check console.');
+        }
+      },
+      logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        this.token = null;
+        this.username = 'Guest';
+        this.page = 'login';
+        if (this.socket) this.socket.disconnect();
+      },
+      async updateBalance(change) {
+        if (!this.token) return;
+        try {
+          const res = await fetch('/api/balance', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${this.token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ change: change })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            this.balance = data.balance;
+          } else {
+            alert('Error updating balance: ' + data.error);
+            this.fetchBalance();
+          }
+        } catch (error) {
+          console.error("Failed to update balance:", error);
+          alert('Failed to update balance.');
+        }
+      },
+      async fetchBalance() {
+        if (!this.token) return;
+        try {
+          const res = await fetch('/api/balance', {
+            headers: { 'Authorization': `Bearer ${this.token}` }
+          });
+          if (res.status === 403 || res.status === 401) {
+            this.logout();
+            return;
+          }
+          const data = await res.json();
+          this.balance = data.balance || 0;
+        } catch (error) {
+          console.error("Could not fetch balance:", error);
+        }
+      },
+      sendMessage() {
+        if (this.newMessage.trim()) {
+          this.socket.emit('message', this.newMessage);
+          this.newMessage = '';
+        }
+      },
+      initializeSocket() {
+        if (this.socket) this.socket.disconnect();
+        this.socket = io({ auth: { token: this.token } });
+
+        this.socket.on('connect', () => {
+          console.log('Socket connected!');
+          this.socket.emit('join', { username: this.username });
+        });
+
+        this.socket.on('messages', messages => (this.messages = messages));
+        this.socket.on('message', message => this.messages.push(message));
+        this.socket.on('onlineUsers', users => (this.onlineUsers = users));
+        this.socket.on('chat-message', (msg) => {
+          this.messages.push(msg);
+          this.$nextTick(() => {
+            const container = this.$refs.chatMessages;
+            container.scrollTop = container.scrollHeight;
+          });
+        });
+        this.socket.on('online-users', (users) => {
+          this.onlineUsers = users;
+        });
+      }
+    },
+    mounted() {
+      vue_app = this;
+      if (this.token) {
+        this.page = 'home';
+        this.fetchBalance();
+        this.initializeSocket();
+      }
+
+      // Cache DOM elements for games
+      bj_elements.playerCards = document.getElementById('player-cards');
+      bj_elements.dealerCards = document.getElementById('dealer-cards');
+      bj_elements.playerTotal = document.getElementById('player-total');
+      bj_elements.dealerTotal = document.getElementById('dealer-total');
+      bj_elements.result = document.getElementById('result');
+    }
+  }).mount('#app');
+</script>
+
 </body>
 </html>
