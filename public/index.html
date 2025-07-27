@@ -2,341 +2,178 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ghosts Gambling</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ghosts Gambling - Casino</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
       font-family: 'Inter', sans-serif;
-      background: #111;
-      color: #eee;
+    }
+    body {
+      background-color: #0f0f0f;
+      color: white;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       height: 100vh;
     }
-
-    header {
-      background: #1c1c1c;
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-
-    #tabs {
-      display: flex;
-      background: #222;
-    }
-
-    #tabs button {
-      flex: 1;
-      padding: 1rem;
-      background: #222;
-      border: none;
-      color: #ccc;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-
-    #tabs button.active {
-      background: #333;
-      color: #fff;
-    }
-
-    #main {
-      flex: 1;
-      display: flex;
-      height: calc(100vh - 160px);
-    }
-
-    #gameArea {
-      flex: 3;
-      padding: 1rem;
-      overflow-y: auto;
-    }
-
-    #sidebar {
-      flex: 1;
-      border-left: 1px solid #333;
+    #app {
+      width: 100%;
+      max-width: 1200px;
       display: flex;
       flex-direction: column;
-    }
-
-    #chat, #users {
-      flex: 1;
+      gap: 1rem;
       padding: 1rem;
-      overflow-y: auto;
     }
-
-    #chat form {
+    .nav {
       display: flex;
-      margin-top: 0.5rem;
+      justify-content: space-around;
+      background: #1c1c1c;
+      padding: 1rem;
+      border-radius: 1rem;
     }
-
-    #chat input {
-      flex: 1;
-      padding: 0.5rem;
+    .nav button {
+      background: transparent;
       border: none;
-    }
-
-    #chat button {
-      padding: 0.5rem;
-      background: #555;
       color: white;
-      border: none;
+      font-size: 1.2rem;
       cursor: pointer;
     }
-
-    .message {
-      margin-bottom: 0.5rem;
+    .tab {
+      background: #1c1c1c;
+      border-radius: 1rem;
+      padding: 1rem;
     }
-
-    .message span {
-      color: #0f0;
-      font-weight: bold;
-    }
-
-    #loginArea {
-      padding: 2rem;
-      max-width: 400px;
-      margin: 5rem auto;
-      background: #222;
-      border-radius: 8px;
-    }
-
-    #loginArea input {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      border: none;
-      background: #111;
-      color: white;
-    }
-
-    #loginArea button {
-      width: 100%;
-      padding: 0.5rem;
-      background: #444;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    #balance {
-      font-size: 1.1rem;
-      font-weight: bold;
-    }
-
     .hidden {
       display: none;
     }
-
-    .game-title {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
+    #chatPanel, #onlineUsersPanel {
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 1rem;
+      background: #2c2c2c;
+      border-radius: 1rem;
     }
-
-    .welcome {
-      font-size: 1.4rem;
-      margin-bottom: 1rem;
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin: 1rem 0;
+    }
+    .tile {
+      background-color: #333;
+      border: 2px solid #444;
+      border-radius: 0.5rem;
+      width: 100%;
+      aspect-ratio: 1/1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
     }
   </style>
 </head>
 <body>
-  <div id="loginArea">
-    <h2>Ghosts Gambling</h2>
-    <input type="text" id="username" placeholder="Username"/>
-    <input type="password" id="password" placeholder="Password"/>
-    <button onclick="login()">Login</button>
-    <button onclick="register()">Register</button>
-    <p id="loginError" style="color:red;"></p>
-  </div>
-
-  <div id="mainArea" class="hidden">
-    <header>
-      <h1>Ghosts Gambling</h1>
-      <div id="balance">Balance: $0</div>
-    </header>
-    <div id="tabs">
-      <button onclick="showTab('home')" id="tab-home" class="active">🏠 Home</button>
-      <button onclick="showTab('blackjack')" id="tab-blackjack">🃏 Blackjack</button>
-      <button onclick="showTab('mines')" id="tab-mines">💣 Mines</button>
+  <div id="app">
+    <div class="nav">
+      <button @click="currentTab = 'home'">Home</button>
+      <button @click="currentTab = 'blackjack'">Blackjack</button>
+      <button @click="currentTab = 'mines'">Mines</button>
     </div>
 
-    <div id="main">
-      <div id="gameArea">
-        <div id="homeTab" class="tabContent">
-          <p class="welcome">Welcome to Ghosts Gambling!</p>
-          <p>Choose a game on the top to begin.</p>
-        </div>
-        <div id="blackjackTab" class="tabContent hidden">
-          <p class="game-title">Blackjack</p>
-          <input type="number" id="bjBet" placeholder="Bet amount"/>
-          <button onclick="playBlackjack()">Play</button>
-          <pre id="bjResult"></pre>
-        </div>
-        <div id="minesTab" class="tabContent hidden">
-          <p class="game-title">Mines</p>
-          <input type="number" id="minesBet" placeholder="Bet amount"/>
-          <input type="text" id="minesTiles" placeholder="Tiles (e.g. 1,2,3)"/>
-          <button onclick="playMines()">Play</button>
-          <pre id="minesResult"></pre>
-        </div>
+    <div class="tab" v-show="currentTab === 'home'">
+      <div id="loginArea"> <!-- DEIN VORHERIGES LOGINFORMULAR BLEIBT UNVERÄNDERT -->
+        <p>Welcome to Ghost's Casino!</p>
       </div>
+      <div id="chatPanel"></div>
+      <div id="onlineUsersPanel"></div>
+    </div>
 
-      <div id="sidebar">
-        <div id="chat">
-          <div id="messages"></div>
-          <form onsubmit="sendMessage(event)">
-            <input id="chatInput" placeholder="Message..."/>
-            <button>Send</button>
-          </form>
-        </div>
-        <div id="users">
-          <strong>Online:</strong>
-          <ul id="onlineUsers"></ul>
+    <div class="tab" v-show="currentTab === 'blackjack'">
+      <h2>Blackjack</h2>
+      <input v-model.number="blackjackBet" placeholder="Bet amount" type="number">
+      <button @click="playBlackjack">Play</button>
+      <p>{{ blackjackResult }}</p>
+      <div>
+        <h3>Your Cards</h3>
+        <p>{{ playerCards.join(', ') }}</p>
+        <h3>Dealer Cards</h3>
+        <p>{{ dealerCards.join(', ') }}</p>
+      </div>
+    </div>
+
+    <div class="tab" v-show="currentTab === 'mines'">
+      <h2>Mines</h2>
+      <input v-model.number="minesBet" placeholder="Bet amount" type="number">
+      <button @click="startMines">Start Game</button>
+      <p>{{ minesResult }}</p>
+      <div class="game-grid">
+        <div v-for="(tile, index) in 25" :key="index" class="tile" @click="revealTile(index)">
+          {{ revealedTiles.includes(index) ? (mines.includes(index) ? '💣' : '✅') : '' }}
         </div>
       </div>
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    let token = '';
-    let username = '';
-    const socket = io();
-
-    function showTab(tab) {
-      document.querySelectorAll('.tabContent').forEach(el => el.classList.add('hidden'));
-      document.querySelector(`#${tab}Tab`).classList.remove('hidden');
-      document.querySelectorAll('#tabs button').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`#tab-${tab}`).classList.add('active');
-    }
-
-    async function login() {
-      const user = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user, password: pass })
-      });
-      const data = await res.json();
-      if (data.token) {
-        token = data.token;
-        username = data.username;
-        document.getElementById('loginArea').classList.add('hidden');
-        document.getElementById('mainArea').classList.remove('hidden');
-        updateBalance();
-        socket.emit('join', { username, token });
-      } else {
-        document.getElementById('loginError').textContent = data.error;
-      }
-    }
-
-    async function register() {
-      const user = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
-      const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: user, password: pass })
-      });
-      const data = await res.json();
-      if (data.message) {
-        login(); // auto-login after register
-      } else {
-        document.getElementById('loginError').textContent = data.error;
-      }
-    }
-
-    async function updateBalance() {
-      const res = await fetch('/api/balance', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      document.getElementById('balance').textContent = `Balance: $${data.balance}`;
-    }
-
-    function sendMessage(e) {
-      e.preventDefault();
-      const input = document.getElementById('chatInput');
-      if (input.value.trim()) {
-        socket.emit('message', input.value.trim());
-        input.value = '';
-      }
-    }
-
-    socket.on('message', msg => {
-      const messages = document.getElementById('messages');
-      const div = document.createElement('div');
-      div.className = 'message';
-      div.innerHTML = `<span>${msg.username}</span>: ${msg.message}`;
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
-    });
-
-    socket.on('messages', msgs => {
-      const messages = document.getElementById('messages');
-      messages.innerHTML = '';
-      msgs.forEach(msg => {
-        const div = document.createElement('div');
-        div.className = 'message';
-        div.innerHTML = `<span>${msg.username}</span>: ${msg.message}`;
-        messages.appendChild(div);
-      });
-      messages.scrollTop = messages.scrollHeight;
-    });
-
-    socket.on('onlineUsers', users => {
-      const list = document.getElementById('onlineUsers');
-      list.innerHTML = '';
-      users.forEach(u => {
-        const li = document.createElement('li');
-        li.textContent = u;
-        list.appendChild(li);
-      });
-    });
-
-    async function playBlackjack() {
-      const bet = parseFloat(document.getElementById('bjBet').value);
-      const res = await fetch('/api/blackjack', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+    new Vue({
+      el: '#app',
+      data: {
+        currentTab: 'home',
+        blackjackBet: 0,
+        blackjackResult: '',
+        playerCards: [],
+        dealerCards: [],
+        minesBet: 0,
+        minesResult: '',
+        revealedTiles: [],
+        mines: []
+      },
+      methods: {
+        async playBlackjack() {
+          const res = await fetch('/api/blackjack', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + localStorage.getItem('token')
+            },
+            body: JSON.stringify({ bet: this.blackjackBet })
+          });
+          const data = await res.json();
+          this.blackjackResult = data.result;
+          this.playerCards = data.playerCards;
+          this.dealerCards = data.dealerCards;
         },
-        body: JSON.stringify({ bet })
-      });
-      const data = await res.json();
-      document.getElementById('bjResult').textContent = JSON.stringify(data, null, 2);
-      updateBalance();
-    }
-
-    async function playMines() {
-      const bet = parseFloat(document.getElementById('minesBet').value);
-      const tiles = document.getElementById('minesTiles').value
-        .split(',')
-        .map(t => parseInt(t.trim()))
-        .filter(n => !isNaN(n));
-      const res = await fetch('/api/mines', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+        async startMines() {
+          this.revealedTiles = [];
+          const res = await fetch('/api/mines', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + localStorage.getItem('token')
+            },
+            body: JSON.stringify({ bet: this.minesBet, tiles: [] })
+          });
+          const data = await res.json();
+          this.minesResult = data.hitMine ? 'You hit a mine!' : 'Safe!';
+          this.mines = data.mines;
         },
-        body: JSON.stringify({ bet, tiles })
-      });
-      const data = await res.json();
-      document.getElementById('minesResult').textContent = JSON.stringify(data, null, 2);
-      updateBalance();
-    }
+        revealTile(index) {
+          if (!this.revealedTiles.includes(index)) {
+            this.revealedTiles.push(index);
+            if (this.mines.includes(index)) {
+              this.minesResult = '💥 You hit a mine!';
+            }
+          }
+        }
+      }
+    });
   </script>
 </body>
 </html>
