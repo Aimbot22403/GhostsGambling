@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -71,6 +32,7 @@
       text-decoration: none;
       margin: 0 15px;
       font-weight: bold;
+      cursor: pointer;
     }
 
     .container {
@@ -82,16 +44,25 @@
 
     .main-content {
       width: 70%;
-      display: flex;
-      gap: 30px;
-    }
-
-    .members-panel {
-      width: 300px;
       background-color: #1a1a1a;
       padding: 20px;
       border-radius: 12px;
       border: 1px solid #800000;
+    }
+    
+    .right-panel {
+      width: 30%;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .members-panel {
+      background-color: #1a1a1a;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #800000;
+      flex-shrink: 0;
     }
 
     .members-panel h2 {
@@ -109,14 +80,6 @@
       padding: 5px 0;
       font-size: 14px;
       color: #ffffff;
-    }
-
-    .game-content {
-      flex-grow: 1;
-      background-color: #1a1a1a;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid #800000;
     }
 
     .left-panel {
@@ -184,6 +147,12 @@
       align-items: center;
       border: 1px solid #800000;
     }
+    
+    .mines-container {
+        display: flex;
+        gap: 30px;
+        height: 100%;
+    }
 
     .game-board h2 {
       font-size: 16px;
@@ -247,6 +216,7 @@
       text-align: center;
       padding: 30px;
       border-radius: 12px;
+      height: 100%;
     }
     #bj-game h2 {
       color: #ff0000;
@@ -290,6 +260,47 @@
       font-size: 20px;
       margin-top: 20px;
     }
+    
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-width: 400px;
+        margin: 50px auto;
+        padding: 40px;
+        background-color: #2d2d2d;
+        border-radius: 12px;
+        border: 1px solid #800000;
+    }
+    .auth-form h2 {
+        color: #ff0000;
+        text-align: center;
+    }
+    .auth-form input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background-color: #1a1a1a;
+        color: white;
+    }
+    .auth-form button {
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        background-color: #800000;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .auth-form p {
+        text-align: center;
+        cursor: pointer;
+        color: #ff9999;
+    }
+    .auth-form p:hover {
+        text-decoration: underline;
+    }
 
     .chat-container {
       width: 100%;
@@ -299,12 +310,10 @@
       border-radius: 12px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
       border: 1px solid #800000;
     }
     .chat-messages {
-      height: 80%;
+      flex-grow: 1;
       overflow-y: auto;
       background-color: #2d2d2d;
       padding: 15px;
@@ -344,29 +353,41 @@
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <a href="#" @click.prevent="page='home'">🏠 Home</a>
-      <a href="#" @click.prevent="page='blackjack'">🃏 Blackjack</a>
-      <a href="#" @click.prevent="page='mines'">💣 Mines</a>
-    </div>
-    <a href="#" @click.prevent="logout">🚪 Logout</a>
-  </header>
-
-  <div class="container" id="app">
-    <!-- Main Content (70%) -->
-    <div class="main-content">
-      <div class="members-panel">
-        <h2>👥 Online Members</h2>
-        <ul>
-          <li v-for="user in onlineUsers" :key="user">{{ user }}</li>
-        </ul>
+  <div id="app">
+    <header v-if="page !== 'login' && page !== 'register'">
+      <div>
+        <a @click="page='home'">🏠 Home</a>
+        <a @click="page='blackjack'">🃏 Blackjack</a>
+        <a @click="page='mines'">💣 Mines</a>
       </div>
-      <div class="game-content">
+      <a @click="logout">🚪 Logout</a>
+    </header>
+
+    <!-- Auth Pages -->
+    <div v-if="page === 'login'" class="auth-form">
+        <h2>Login</h2>
+        <input v-model="loginUsername" type="text" placeholder="Username">
+        <input v-model="loginPassword" type="password" placeholder="Password">
+        <button @click="login">Login</button>
+        <p @click="page='register'">No account? Register here</p>
+    </div>
+
+    <div v-if="page === 'register'" class="auth-form">
+        <h2>Register</h2>
+        <input v-model="registerUsername" type="text" placeholder="Username">
+        <input v-model="registerPassword" type="password" placeholder="Password">
+        <button @click="register">Register</button>
+        <p @click="page='login'">Already have an account? Login here</p>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="container" v-if="page !== 'login' && page !== 'register'">
+      <!-- Main Content (70%) -->
+      <main class="main-content">
         <!-- Home -->
         <div v-show="page==='home'" class="text-center">
           <h2 style="font-size: 24px; color: #ff0000; margin-bottom: 15px;">Welcome, {{ username }}!</h2>
-          <p style="font-size: 18px; margin-bottom: 10px;">Balance: <span id="homeBalance">{{ balance }}</span> Coins</p>
+          <p style="font-size: 18px; margin-bottom: 10px;">Balance: <span id="homeBalance">{{ balance.toLocaleString() }}</span> Coins</p>
           <p style="font-size: 14px; color: #ff9999;">Choose a game above or join the chat on the right!</p>
         </div>
 
@@ -375,7 +396,7 @@
           <h2>🃏 Blackjack - Hans Has Luck</h2>
           <div class="hand">
             <label style="font-size: 16px; margin-right: 10px;">Bet:</label>
-            <input type="number" id="bjBet" v-model.number="bjBet" min="1">
+            <input type="number" id="bjBet" :value="bjBet" @input="bjBet = $event.target.value" min="1">
           </div>
           <div class="hand">
             <h3>Your Hand</h3>
@@ -396,13 +417,13 @@
         </div>
 
         <!-- Mines -->
-        <div v-show="page==='mines'" class="container">
+        <div v-show="page==='mines'" class="mines-container">
           <div class="left-panel">
             <h2>🧪 Mines Spiel</h2>
             <label>Einsatz</label>
-            <input type="number" id="betAmount" v-model.number="betAmount" value="1000">
+            <input type="number" id="betAmount" :value="betAmount" @input="betAmount = $event.target.value" >
             <label>Anzahl Minen</label>
-            <select id="mineCount" v-model.number="mineCount">
+            <select id="mineCount" :value="mineCount" @change="mineCount = $event.target.value">
               <option>1</option>
               <option>2</option>
               <option>3</option>
@@ -411,7 +432,7 @@
             </select>
             <div class="multiplier" id="multiplier">1.00x</div>
             <div class="balance-display">
-              💰 Balance: <span id="minesBalance">{{ balance }}</span> Coins
+              💰 Balance: <span id="minesBalance">{{ balance.toLocaleString() }}</span> Coins
             </div>
             <button onclick="startGame()">🎮 Start Game</button>
             <button onclick="cashout()">💸 Auszahlen</button>
@@ -421,30 +442,40 @@
             <div class="grid" id="grid"></div>
           </div>
         </div>
-      </div>
-    </div>
+      </main>
 
-    <!-- Chat Area (30%) -->
-    <aside class="w-2/5">
-      <div class="chat-container">
-        <h3 style="font-size: 18px; margin-bottom: 15px; color: #ff0000;">💬 Chat</h3>
-        <div class="chat-messages">
-          <p v-for="msg in messages" :key="msg._id">
-            <strong>{{ msg.username }}</strong>: {{ msg.message }}
-            <span style="color: #ff9999; font-size: 12px;"> ({{ new Date(msg.timestamp).toLocaleTimeString() }})</span>
-          </p>
+      <!-- Right Sidebar (30%) -->
+      <aside class="right-panel">
+        <div class="members-panel">
+            <h2>👥 Online Members</h2>
+            <ul>
+              <li v-for="user in onlineUsers" :key="user">{{ user }}</li>
+            </ul>
         </div>
-        <div class="chat-input">
-          <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Type a message...">
-          <button @click="sendMessage">Send</button>
+        <div class="chat-container">
+          <h3 style="font-size: 18px; margin-bottom: 15px; color: #ff0000;">💬 Chat</h3>
+          <div class="chat-messages" ref="chatMessages">
+            <p v-for="msg in messages" :key="msg._id">
+              <strong>{{ msg.username }}</strong>: {{ msg.message }}
+              <span style="color: #ff9999; font-size: 12px;"> ({{ new Date(msg.timestamp).toLocaleTimeString() }})</span>
+            </p>
+          </div>
+          <div class="chat-input">
+            <input v-model="newMessage" @keyup.enter="sendMessage" placeholder="Type a message...">
+            <button @click="sendMessage">Send</button>
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </div>
   </div>
 
   <div class="overlay" id="cashoutMessage">
     <span class="emoji">🎉</span> Ausgezahlt! +<span id="cashoutAmount"></span> Coins!
   </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Vue.js -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
 
   <!-- Blackjack Script -->
   <script>
@@ -453,34 +484,19 @@
     const playerTotalEl = document.getElementById('player-total')
     const dealerTotalEl = document.getElementById('dealer-total')
     const resultEl = document.getElementById('result')
-    const bjBetInput = document.getElementById('bjBet')
-
-    const flipSound = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_533c09b3e4.mp3')
-    const winSound = new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_8a3c1f1e79.mp3')
-    const loseSound = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_b20b7f6e98.mp3')
-    const drawSound = new Audio('https://cdn.pixabay.com/audio/2022/03/22/audio_ebedcbfdd5.mp3')
+    
+    // Sounds can be initialized here if you want them to be global
+    // const flipSound = new Audio(...)
 
     let deck = []
     let playerHand = []
     let dealerHand = []
-    let gameOver = false
-    let currentBalance = 0
-    let bjBet = 100
-
-    async function fetchBalance() {
-      const token = localStorage.getItem('token')
-      if (!token) return 0
-      const res = await fetch('/api/balance', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await res.json()
-      return data.balance || 0
-    }
+    let bjGameOver = true
 
     function createDeck() {
       const suits = ['♠', '♥', '♣', '♦']
       const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-      const deck = []
+      deck = []
       for (let suit of suits) {
         for (let value of values) {
           deck.push({ suit, value })
@@ -519,30 +535,32 @@
         el.appendChild(cardEl)
       })
     }
-
-    async function update() {
+    
+    function updateBjDisplay() {
       displayHand(playerCardsEl, playerHand)
-      displayHand(dealerCardsEl, dealerHand)
       playerTotalEl.textContent = 'Total: ' + calculateTotal(playerHand)
-      dealerTotalEl.textContent = gameOver ? 'Total: ' + calculateTotal(dealerHand) : 'Total: ?'
-      currentBalance = await fetchBalance()
-      document.getElementById('homeBalance').textContent = currentBalance.toLocaleString()
-      document.getElementById('minesBalance').textContent = currentBalance.toLocaleString()
-      bjBet = Math.min(bjBet, currentBalance)
-      bjBetInput.value = bjBet
+      
+      const dealerHandToShow = [...dealerHand];
+      if (!bjGameOver) {
+          dealerHandToShow.push({suit: '?', value: ''});
+      }
+      displayHand(dealerCardsEl, dealerHandToShow)
+      
+      dealerTotalEl.textContent = bjGameOver ? 'Total: ' + calculateTotal(dealerHand) : 'Total: ?'
     }
 
+
     function hit() {
-      if (gameOver || bjBet > currentBalance) return alert('Insufficient balance or game over!')
-      flipSound.play()
+      if (bjGameOver) return alert('Game over! Start a new game.');
       playerHand.push(deck.pop())
-      update()
-      if (calculateTotal(playerHand) > 21) endGame()
+      updateBjDisplay()
+      if (calculateTotal(playerHand) > 21) {
+        endGame()
+      }
     }
 
     function stand() {
-      if (gameOver || bjBet > currentBalance) return alert('Insufficient balance or game over!')
-      flipSound.play()
+      if (bjGameOver) return alert('Game over! Start a new game.');
       while (calculateTotal(dealerHand) < 17) {
         dealerHand.push(deck.pop())
       }
@@ -550,65 +568,48 @@
     }
 
     function endGame() {
-      gameOver = true
+      bjGameOver = true
       const playerTotal = calculateTotal(playerHand)
       const dealerTotal = calculateTotal(dealerHand)
-
-      update()
+      let outcome = ''
+      let betChange = 0;
+      const currentBet = parseInt(document.getElementById('bjBet').value) || 0;
 
       if (playerTotal > 21) {
-        resultEl.textContent = 'You Busted! 💥 Dealer Wins!'
-        loseSound.play()
-        updateBalance(-bjBet)
-      } else if (dealerTotal > 21) {
-        resultEl.textContent = 'Dealer Busted! 🎉 You Win!'
-        winSound.play()
-        updateBalance(bjBet)
-      } else if (playerTotal > dealerTotal) {
-        resultEl.textContent = 'You Win! 🎉'
-        winSound.play()
-        updateBalance(bjBet)
+        outcome = 'You Busted! 💥 Dealer Wins!'
+        betChange = -currentBet;
+      } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+        outcome = 'You Win! 🎉'
+        betChange = currentBet;
       } else if (playerTotal < dealerTotal) {
-        resultEl.textContent = 'Dealer Wins! 😢'
-        loseSound.play()
-        updateBalance(-bjBet)
+        outcome = 'Dealer Wins! 😢'
+        betChange = -currentBet;
       } else {
-        resultEl.textContent = 'Push (Tie)! 🤝'
-        drawSound.play()
+        outcome = 'Push (Tie)! 🤝'
+        betChange = 0;
+      }
+      resultEl.textContent = outcome;
+      updateBjDisplay();
+      if(betChange !== 0) {
+        app.updateBalance(betChange);
       }
     }
 
     function resetGame() {
-      if (bjBet > currentBalance) return alert('Insufficient balance!')
+      const currentBet = parseInt(document.getElementById('bjBet').value) || 0;
+      if (currentBet > app.balance) return alert('Insufficient balance!');
+      
       deck = createDeck()
       playerHand = [deck.pop(), deck.pop()]
       dealerHand = [deck.pop()]
-      gameOver = false
+      bjGameOver = false
       resultEl.textContent = ''
-      update()
-    }
+      updateBjDisplay()
 
-    async function updateBalance(change) {
-      const token = localStorage.getItem('token')
-      const res = await fetch('/api/balance', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await res.json()
-      currentBalance = data.balance
-      const newBalance = currentBalance + change
-      const updateRes = await fetch('/api/balance', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ balance: newBalance })
-      })
-      if (!updateRes.ok) {
-        alert('Error updating balance. Data may have been modified.')
-        await fetchBalance()
+      if(calculateTotal(playerHand) === 21) {
+          endGame();
       }
-      await update()
     }
-
-    resetGame()
   </script>
 
   <!-- Mines Script -->
@@ -616,67 +617,32 @@
     let isGameActive = false
     let safeTiles = []
     let clickedTiles = new Set()
-    let bet = 0
-    let mines = 3
     let multiplier = 1
-    let currentBalance = 0
-
-    async function fetchBalance() {
-      const token = localStorage.getItem('token')
-      if (!token) return 0
-      const res = await fetch('/api/balance', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await res.json()
-      return data.balance || 0
-    }
-
-    async function updateBalance(change) {
-      const token = localStorage.getItem('token')
-      const res = await fetch('/api/balance', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await res.json()
-      currentBalance = data.balance
-      const newBalance = currentBalance + change
-      const updateRes = await fetch('/api/balance', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ balance: newBalance })
-      })
-      if (!updateRes.ok) {
-        alert('Error updating balance. Data may have been modified.')
-        return await fetchBalance()
-      }
-      return await fetchBalance()
-    }
 
     function startGame() {
-      fetchBalance().then(async (balance) => {
-        bet = parseInt(document.getElementById('betAmount').value)
-        mines = parseInt(document.getElementById('mineCount').value)
-        if (bet <= 0 || bet > balance) return alert('Invalid bet.')
-        const newBalance = await updateBalance(-bet)
-        document.getElementById('minesBalance').textContent = newBalance.toLocaleString()
-        document.getElementById('multiplier').textContent = '1.00x'
-        multiplier = 1
-        clickedTiles = new Set()
-        isGameActive = true
-        generateGrid()
-      })
+        const bet = parseInt(document.getElementById('betAmount').value);
+        const mines = parseInt(document.getElementById('mineCount').value);
+
+        if (bet <= 0 || bet > app.balance) return alert('Invalid bet or insufficient balance.');
+        
+        app.updateBalance(-bet).then(() => {
+            document.getElementById('multiplier').textContent = '1.00x'
+            multiplier = 1
+            clickedTiles = new Set()
+            isGameActive = true
+            generateGrid(mines)
+        });
     }
 
-    function generateGrid() {
+    function generateGrid(mines) {
       const grid = document.getElementById('grid')
       grid.innerHTML = ''
       safeTiles = Array(25).fill('safe')
-      for (let i = 0; i < mines; i++) {
-        let idx
-        do {
-          idx = Math.floor(Math.random() * 25)
-        } while (safeTiles[idx] === 'mine')
-        safeTiles[idx] = 'mine'
+      let minePositions = new Set();
+      while(minePositions.size < mines) {
+          minePositions.add(Math.floor(Math.random() * 25));
       }
+      minePositions.forEach(idx => safeTiles[idx] = 'mine');
 
       for (let i = 0; i < 25; i++) {
         const cell = document.createElement('div')
@@ -697,15 +663,16 @@
       } else {
         cell.classList.add('safe')
         cell.innerHTML = '💎'
-        multiplier = (multiplier * 1.15).toFixed(2)
+        multiplier = parseFloat((multiplier * 1.15).toFixed(2)) // Recalculate based on revealed safes for fairness
         document.getElementById('multiplier').textContent = `${multiplier}x`
       }
     }
 
     function cashout() {
       if (!isGameActive || clickedTiles.size === 0) return
+      const bet = parseInt(document.getElementById('betAmount').value);
       const payout = Math.floor(bet * multiplier)
-      updateBalance(payout).then(() => {
+      app.updateBalance(payout).then(() => {
         showCashout(payout)
         isGameActive = false
       })
@@ -721,65 +688,151 @@
     }
   </script>
 
-  <!-- Chat + Tabs Script -->
-  <script type="module">
-    import { createApp } from 'https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.esm-browser.js'
-    const socket = io()
-
-    async function fetchBalance() {
-      const token = localStorage.getItem('token')
-      if (!token) return 0
-      const res = await fetch('/api/balance', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await res.json()
-      return data.balance || 0
-    }
-
-    function logout() {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
-    }
-
-    createApp({
-      data() { return {
-        page: 'home',
-        username: localStorage.getItem('username') || 'Guest',
-        balance: 0,
-        messages: [],
-        newMessage: '',
-        bjBet: 100,
-        betAmount: 1000,
-        mineCount: 3,
-        onlineUsers: []
-      }},
-      computed: {
-        tabClass() {
-          return (tab) => this.page === tab ? 'text-ff0000 font-bold' : 'hover:text-ff9999'
+  <!-- Vue App Script -->
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          page: 'login', // Start with login page
+          token: localStorage.getItem('token') || null,
+          username: localStorage.getItem('username') || 'Guest',
+          loginUsername: '',
+          loginPassword: '',
+          registerUsername: '',
+          registerPassword: '',
+          balance: 0,
+          messages: [],
+          newMessage: '',
+          onlineUsers: [],
+          // Game-specific data models
+          bjBet: 100,
+          betAmount: 1000,
+          mineCount: 3
         }
+      },
+      watch: {
+          messages() {
+              // Auto-scroll chat
+              this.$nextTick(() => {
+                  const container = this.$refs.chatMessages;
+                  if (container) {
+                    container.scrollTop = container.scrollHeight;
+                  }
+              });
+          }
       },
       methods: {
-        async sendMessage() {
-          if (this.newMessage.trim()) {
-            socket.emit('message', this.newMessage)
-            this.newMessage = ''
+        async register() {
+          try {
+            const res = await fetch('/api/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: this.registerUsername, password: this.registerPassword }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert('Registered successfully! Please log in.');
+              this.page = 'login';
+            } else {
+              alert(data.error || 'Registration failed');
+            }
+          } catch(err) {
+            alert('An error occurred during registration.');
           }
         },
-        async updateBalanceDisplay() {
-          this.balance = await fetchBalance()
-          document.getElementById('homeBalance').textContent = this.balance.toLocaleString()
-          document.getElementById('minesBalance').textContent = this.balance.toLocaleString()
+        async login() {
+          try {
+            const res = await fetch('/api/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: this.loginUsername, password: this.loginPassword }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.token = data.token;
+              this.username = data.username;
+              this.balance = data.balance;
+              localStorage.setItem('token', data.token);
+              localStorage.setItem('username', data.username);
+              this.page = 'home';
+              this.initializeSocket();
+            } else {
+              alert(data.error || 'Login failed');
+            }
+          } catch(err) {
+            alert('An error occurred during login.');
+          }
+        },
+        logout() {
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          this.token = null;
+          this.username = 'Guest';
+          this.page = 'login';
+          if (this.socket) {
+              this.socket.disconnect();
+          }
+        },
+        async updateBalance(change) {
+            if (!this.token) return;
+            try {
+                const res = await fetch('/api/balance', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${this.token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ change: change }) // Send change instead of new balance
+                });
+                const data = await res.json();
+                if(res.ok){
+                    this.balance = data.balance;
+                } else {
+                    alert('Error updating balance: ' + data.error);
+                    // Re-fetch balance to be sure
+                    this.fetchBalance();
+                }
+            } catch (error) {
+                alert('Failed to update balance.');
+            }
+        },
+        async fetchBalance() {
+            if (!this.token) return;
+            try {
+                const res = await fetch('/api/balance', {
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+                const data = await res.json();
+                this.balance = data.balance || 0;
+            } catch (error) {
+                console.error("Could not fetch balance");
+            }
+        },
+        sendMessage() {
+          if (this.newMessage.trim() && this.socket) {
+            this.socket.emit('message', this.newMessage);
+            this.newMessage = '';
+          }
+        },
+        initializeSocket() {
+            this.socket = io({
+                auth: {
+                    token: this.token
+                }
+            });
+            this.socket.emit('join', { username: this.username });
+            this.socket.on('messages', m => this.messages = m);
+            this.socket.on('message', m => this.messages.push(m));
+            this.socket.on('users', users => this.onlineUsers = users);
         }
       },
-      async mounted() {
-        await this.updateBalanceDisplay()
-        socket.emit('join', { username: this.username, token: localStorage.getItem('token') })
-        socket.on('messages', m => this.messages = m)
-        socket.on('message', m => this.messages.push(m))
-        socket.on('users', users => this.onlineUsers = users)
-        setInterval(this.updateBalanceDisplay, 5000)
+      mounted() {
+        if (this.token) {
+          this.page = 'home';
+          this.fetchBalance();
+          this.initializeSocket();
+          // Periodically sync balance
+          setInterval(this.fetchBalance, 15000); 
+        }
       }
-    }).mount('#app')
+    }).mount('#app');
   </script>
 </body>
 </html>
