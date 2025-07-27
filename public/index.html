@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,348 +8,54 @@
 
   <!-- Custom Styles -->
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Inter', sans-serif;
-      background-color: #1a1a1a;
-      color: white;
-    }
-
-    header {
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      background-color: #1a1a1a;
-      border-bottom: 1px solid #800000;
-    }
-
-    header a {
-      color: white;
-      text-decoration: none;
-      margin: 0 15px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .container {
-      display: flex;
-      padding: 30px;
-      gap: 30px;
-      height: calc(100vh - 70px);
-    }
-
-    .main-content {
-      width: 70%;
-      background-color: #1a1a1a;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid #800000;
-    }
-    
-    .right-panel {
-      width: 30%;
-      display: flex;
-      flex-direction: column;
-      gap: 30px;
-    }
-
-    .members-panel {
-      background-color: #1a1a1a;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid #800000;
-      flex-shrink: 0;
-    }
-
-    .members-panel h2 {
-      font-size: 18px;
-      margin-bottom: 15px;
-      color: #ff0000;
-    }
-
-    .members-panel ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .members-panel li {
-      padding: 5px 0;
-      font-size: 14px;
-      color: #ffffff;
-    }
-
-    .left-panel {
-      width: 300px;
-      background-color: #1a1a1a;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid #800000;
-    }
-
-    .left-panel h2 {
-      font-size: 18px;
-      margin-bottom: 15px;
-      color: #ff0000;
-    }
-
-    .left-panel label {
-      font-size: 13px;
-      color: #ff9999;
-    }
-
-    .left-panel input,
-    .left-panel select {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0 15px;
-      border-radius: 8px;
-      border: none;
-      background-color: #2d2d2d;
-      color: white;
-    }
-
-    .left-panel button {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background-color: #800000;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 10px;
-    }
-
-    .left-panel .multiplier {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 10px;
-      color: #ff0000;
-    }
-
-    .balance-display {
-      font-size: 14px;
-      color: #ff9999;
-      margin-bottom: 15px;
-    }
-
-    .game-board {
-      flex-grow: 1;
-      background-color: #1a1a1a;
-      padding: 30px;
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      border: 1px solid #800000;
-    }
-    
-    .mines-container {
-        display: flex;
-        gap: 30px;
-        height: 100%;
-    }
-
-    .game-board h2 {
-      font-size: 16px;
-      margin-bottom: 20px;
-      color: #ff0000;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(5, 60px);
-      gap: 10px;
-    }
-
-    .cell {
-      width: 60px;
-      height: 60px;
-      border-radius: 10px;
-      background-color: #800000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      color: #ffffff;
-    }
-
-    .cell.safe {
-      background-color: #ff0000;
-    }
-
-    .cell.mine {
-      background-color: #1a1a1a;
-      color: #ff0000;
-    }
-
-    .overlay {
-      position: fixed;
-      top: 30%;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #800000;
-      color: white;
-      padding: 20px 40px;
-      border-radius: 12px;
-      font-size: 20px;
-      font-weight: bold;
-      display: none;
-      z-index: 9999;
-    }
-
-    .overlay .emoji {
-      font-size: 26px;
-      margin-right: 10px;
-    }
-
-    #bj-game {
-      background: linear-gradient(to right, #1a1a1a, #2d2d2d, #800000);
-      font-family: 'Segoe UI', sans-serif;
-      color: white;
-      text-align: center;
-      padding: 30px;
-      border-radius: 12px;
-      height: 100%;
-    }
-    #bj-game h2 {
-      color: #ff0000;
-      font-size: 24px;
-    }
-    #bj-game .hand {
-      margin: 20px 0;
-    }
-    #bj-game .card {
-      display: inline-block;
-      background: #ff0000;
-      color: black;
-      padding: 10px 15px;
-      margin: 5px;
-      border-radius: 8px;
-      font-weight: bold;
-    }
-    #bj-game button {
-      padding: 12px 20px;
-      font-size: 16px;
-      margin: 10px;
-      border: none;
-      background-color: #800000;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    #bj-game button:hover {
-      background-color: #660000;
-    }
-    #bj-game input {
-      padding: 10px;
-      font-size: 16px;
-      margin: 10px;
-      border: none;
-      background-color: #2d2d2d;
-      color: white;
-      border-radius: 6px;
-    }
-    #bj-game #result {
-      font-size: 20px;
-      margin-top: 20px;
-    }
-    
-    .auth-form {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        max-width: 400px;
-        margin: 50px auto;
-        padding: 40px;
-        background-color: #2d2d2d;
-        border-radius: 12px;
-        border: 1px solid #800000;
-    }
-    .auth-form h2 {
-        color: #ff0000;
-        text-align: center;
-    }
-    .auth-form input {
-        width: 100%;
-        padding: 12px;
-        border-radius: 8px;
-        border: none;
-        background-color: #1a1a1a;
-        color: white;
-    }
-    .auth-form button {
-        padding: 12px;
-        border: none;
-        border-radius: 8px;
-        background-color: #800000;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    .auth-form p {
-        text-align: center;
-        cursor: pointer;
-        color: #ff9999;
-    }
-    .auth-form p:hover {
-        text-decoration: underline;
-    }
-
-    .chat-container {
-      width: 100%;
-      height: 100%;
-      background-color: #1a1a1a;
-      padding: 20px;
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      border: 1px solid #800000;
-    }
-    .chat-messages {
-      flex-grow: 1;
-      overflow-y: auto;
-      background-color: #2d2d2d;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-    }
-    .chat-messages p {
-      margin: 5px 0;
-      color: #ffffff;
-    }
-    .chat-input {
-      width: 100%;
-      display: flex;
-      gap: 10px;
-    }
-    .chat-input input {
-      flex-grow: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background-color: #2d2d2d;
-      color: white;
-      font-size: 14px;
-    }
-    .chat-input button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      background-color: #800000;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .chat-input button:hover {
-      background-color: #660000;
-    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Inter', sans-serif; background-color: #1a1a1a; color: white; }
+    header { padding: 15px 30px; display: flex; justify-content: space-between; background-color: #1a1a1a; border-bottom: 1px solid #800000; }
+    header a { color: white; text-decoration: none; margin: 0 15px; font-weight: bold; cursor: pointer; }
+    .container { display: flex; padding: 30px; gap: 30px; height: calc(100vh - 70px); }
+    .main-content { width: 70%; background-color: #1a1a1a; padding: 20px; border-radius: 12px; border: 1px solid #800000; }
+    .right-panel { width: 30%; display: flex; flex-direction: column; gap: 30px; }
+    .members-panel { background-color: #1a1a1a; padding: 20px; border-radius: 12px; border: 1px solid #800000; flex-shrink: 0; }
+    .members-panel h2 { font-size: 18px; margin-bottom: 15px; color: #ff0000; }
+    .members-panel ul { list-style: none; padding: 0; }
+    .members-panel li { padding: 5px 0; font-size: 14px; color: #ffffff; }
+    .left-panel { width: 300px; background-color: #1a1a1a; padding: 20px; border-radius: 12px; border: 1px solid #800000; }
+    .left-panel h2 { font-size: 18px; margin-bottom: 15px; color: #ff0000; }
+    .left-panel label { font-size: 13px; color: #ff9999; }
+    .left-panel input, .left-panel select { width: 100%; padding: 10px; margin: 8px 0 15px; border-radius: 8px; border: none; background-color: #2d2d2d; color: white; }
+    .left-panel button { width: 100%; padding: 10px; border: none; border-radius: 8px; background-color: #800000; color: white; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+    .left-panel .multiplier { font-size: 24px; font-weight: 700; margin-bottom: 10px; color: #ff0000; }
+    .balance-display { font-size: 14px; color: #ff9999; margin-bottom: 15px; }
+    .game-board { flex-grow: 1; background-color: #1a1a1a; padding: 30px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; border: 1px solid #800000; }
+    .mines-container { display: flex; gap: 30px; height: 100%; }
+    .game-board h2 { font-size: 16px; margin-bottom: 20px; color: #ff0000; }
+    .grid { display: grid; grid-template-columns: repeat(5, 60px); gap: 10px; }
+    .cell { width: 60px; height: 60px; border-radius: 10px; background-color: #800000; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; transition: background-color 0.2s; color: #ffffff; }
+    .cell.safe { background-color: #ff0000; }
+    .cell.mine { background-color: #1a1a1a; color: #ff0000; }
+    .overlay { position: fixed; top: 30%; left: 50%; transform: translateX(-50%); background-color: #800000; color: white; padding: 20px 40px; border-radius: 12px; font-size: 20px; font-weight: bold; display: none; z-index: 9999; }
+    .overlay .emoji { font-size: 26px; margin-right: 10px; }
+    #bj-game { background: linear-gradient(to right, #1a1a1a, #2d2d2d, #800000); font-family: 'Segoe UI', sans-serif; color: white; text-align: center; padding: 30px; border-radius: 12px; height: 100%; }
+    #bj-game h2 { color: #ff0000; font-size: 24px; }
+    #bj-game .hand { margin: 20px 0; }
+    #bj-game .card { display: inline-block; background: #ff0000; color: black; padding: 10px 15px; margin: 5px; border-radius: 8px; font-weight: bold; }
+    #bj-game button { padding: 12px 20px; font-size: 16px; margin: 10px; border: none; background-color: #800000; color: white; border-radius: 6px; cursor: pointer; }
+    #bj-game button:hover { background-color: #660000; }
+    #bj-game input { padding: 10px; font-size: 16px; margin: 10px; border: none; background-color: #2d2d2d; color: white; border-radius: 6px; }
+    #bj-game #result { font-size: 20px; margin-top: 20px; }
+    .auth-form { display: flex; flex-direction: column; gap: 15px; max-width: 400px; margin: 50px auto; padding: 40px; background-color: #2d2d2d; border-radius: 12px; border: 1px solid #800000; }
+    .auth-form h2 { color: #ff0000; text-align: center; }
+    .auth-form input { width: 100%; padding: 12px; border-radius: 8px; border: none; background-color: #1a1a1a; color: white; }
+    .auth-form button { padding: 12px; border: none; border-radius: 8px; background-color: #800000; color: white; font-weight: bold; cursor: pointer; }
+    .auth-form p { text-align: center; cursor: pointer; color: #ff9999; }
+    .auth-form p:hover { text-decoration: underline; }
+    .chat-container { width: 100%; height: 100%; background-color: #1a1a1a; padding: 20px; border-radius: 12px; display: flex; flex-direction: column; border: 1px solid #800000; }
+    .chat-messages { flex-grow: 1; overflow-y: auto; background-color: #2d2d2d; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .chat-messages p { margin: 5px 0; color: #ffffff; }
+    .chat-input { width: 100%; display: flex; gap: 10px; }
+    .chat-input input { flex-grow: 1; padding: 10px; border: none; border-radius: 8px; background-color: #2d2d2d; color: white; font-size: 14px; }
+    .chat-input button { padding: 10px 20px; border: none; border-radius: 8px; background-color: #800000; color: white; font-weight: bold; cursor: pointer; }
+    .chat-input button:hover { background-color: #660000; }
   </style>
 </head>
 <body>
@@ -366,52 +72,43 @@
     <!-- Auth Pages -->
     <div v-if="page === 'login'" class="auth-form">
         <h2>Login</h2>
-        <input v-model="loginUsername" type="text" placeholder="Username">
-        <input v-model="loginPassword" type="password" placeholder="Password">
+        <input v-model="loginUsername" type="text" placeholder="Username" @keyup.enter="login">
+        <input v-model="loginPassword" type="password" placeholder="Password" @keyup.enter="login">
         <button @click="login">Login</button>
         <p @click="page='register'">No account? Register here</p>
     </div>
 
     <div v-if="page === 'register'" class="auth-form">
         <h2>Register</h2>
-        <input v-model="registerUsername" type="text" placeholder="Username">
-        <input v-model="registerPassword" type="password" placeholder="Password">
+        <input v-model="registerUsername" type="text" placeholder="Username" @keyup.enter="register">
+        <input v-model="registerPassword" type="password" placeholder="Password" @keyup.enter="register">
         <button @click="register">Register</button>
         <p @click="page='login'">Already have an account? Login here</p>
     </div>
 
     <!-- Main App Container -->
     <div class="container" v-if="page !== 'login' && page !== 'register'">
-      <!-- Main Content (70%) -->
       <main class="main-content">
         <!-- Home -->
         <div v-show="page==='home'" class="text-center">
           <h2 style="font-size: 24px; color: #ff0000; margin-bottom: 15px;">Welcome, {{ username }}!</h2>
-          <p style="font-size: 18px; margin-bottom: 10px;">Balance: <span id="homeBalance">{{ balance.toLocaleString() }}</span> Coins</p>
+          <p style="font-size: 18px; margin-bottom: 10px;">Balance: <span>{{ balance.toLocaleString() }}</span> Coins</p>
           <p style="font-size: 14px; color: #ff9999;">Choose a game above or join the chat on the right!</p>
         </div>
 
         <!-- Blackjack -->
         <div v-show="page==='blackjack'" id="bj-game">
-          <h2>🃏 Blackjack - Hans Has Luck</h2>
+          <h2>🃏 Blackjack</h2>
           <div class="hand">
             <label style="font-size: 16px; margin-right: 10px;">Bet:</label>
-            <input type="number" id="bjBet" :value="bjBet" @input="bjBet = $event.target.value" min="1">
+            <input type="number" v-model.number="bjBet" min="1">
           </div>
-          <div class="hand">
-            <h3>Your Hand</h3>
-            <div id="player-cards"></div>
-            <p id="player-total"></p>
-          </div>
-          <div class="hand">
-            <h3>Dealer's Hand</h3>
-            <div id="dealer-cards"></div>
-            <p id="dealer-total"></p>
-          </div>
+          <div class="hand"><h3>Your Hand</h3><div id="player-cards"></div><p id="player-total"></p></div>
+          <div class="hand"><h3>Dealer's Hand</h3><div id="dealer-cards"></div><p id="dealer-total"></p></div>
           <div>
-            <button onclick="hit()">Hit</button>
-            <button onclick="stand()">Stand</button>
-            <button onclick="resetGame()">New Game</button>
+            <button onclick="bj_hit()">Hit</button>
+            <button onclick="bj_stand()">Stand</button>
+            <button onclick="bj_resetGame()">New Game</button>
           </div>
           <p id="result"></p>
         </div>
@@ -421,41 +118,30 @@
           <div class="left-panel">
             <h2>🧪 Mines Spiel</h2>
             <label>Einsatz</label>
-            <input type="number" id="betAmount" :value="betAmount" @input="betAmount = $event.target.value" >
+            <input type="number" v-model.number="betAmount">
             <label>Anzahl Minen</label>
-            <select id="mineCount" :value="mineCount" @change="mineCount = $event.target.value">
-              <option>1</option>
-              <option>2</option>
-              <option>3</option>
-              <option>5</option>
-              <option>10</option>
+            <select v-model.number="mineCount">
+              <option>1</option><option>2</option><option>3</option><option>5</option><option>10</option>
             </select>
             <div class="multiplier" id="multiplier">1.00x</div>
-            <div class="balance-display">
-              💰 Balance: <span id="minesBalance">{{ balance.toLocaleString() }}</span> Coins
-            </div>
-            <button onclick="startGame()">🎮 Start Game</button>
-            <button onclick="cashout()">💸 Auszahlen</button>
+            <div class="balance-display">💰 Balance: <span>{{ balance.toLocaleString() }}</span> Coins</div>
+            <button onclick="mines_startGame()">🎮 Start Game</button>
+            <button onclick="mines_cashout()">💸 Auszahlen</button>
           </div>
-          <div class="game-board">
-            <h2>🧪 Feld auswählen</h2>
-            <div class="grid" id="grid"></div>
-          </div>
+          <div class="game-board"><h2 class="text-lg mb-4 text-red-500">🧪 Feld auswählen</h2><div class="grid" id="grid"></div></div>
         </div>
       </main>
 
-      <!-- Right Sidebar (30%) -->
+      <!-- Right Sidebar -->
       <aside class="right-panel">
         <div class="members-panel">
             <h2>👥 Online Members</h2>
-            <ul>
-              <li v-for="user in onlineUsers" :key="user">{{ user }}</li>
-            </ul>
+            <ul><li v-for="user in onlineUsers" :key="user">{{ user }}</li></ul>
         </div>
         <div class="chat-container">
           <h3 style="font-size: 18px; margin-bottom: 15px; color: #ff0000;">💬 Chat</h3>
           <div class="chat-messages" ref="chatMessages">
-            <p v-for="msg in messages" :key="msg._id">
+            <p v-for="(msg, index) in messages" :key="index">
               <strong>{{ msg.username }}</strong>: {{ msg.message }}
               <span style="color: #ff9999; font-size: 12px;"> ({{ new Date(msg.timestamp).toLocaleTimeString() }})</span>
             </p>
@@ -474,252 +160,180 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <!-- Vue.js -->
   <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
 
-  <!-- Blackjack Script -->
+  <!-- GAME SCRIPTS (global scope) -->
   <script>
-    const playerCardsEl = document.getElementById('player-cards')
-    const dealerCardsEl = document.getElementById('dealer-cards')
-    const playerTotalEl = document.getElementById('player-total')
-    const dealerTotalEl = document.getElementById('dealer-total')
-    const resultEl = document.getElementById('result')
+    // Make Vue app instance globally accessible for game scripts
+    let vue_app; 
     
-    // Sounds can be initialized here if you want them to be global
-    // const flipSound = new Audio(...)
+    // --- Blackjack ---
+    const bj_elements = {
+        playerCards: null, dealerCards: null, playerTotal: null, 
+        dealerTotal: null, result: null
+    };
+    let bj_deck = [];
+    let bj_playerHand = [];
+    let bj_dealerHand = [];
+    let bj_gameOver = true;
 
-    let deck = []
-    let playerHand = []
-    let dealerHand = []
-    let bjGameOver = true
-
-    function createDeck() {
-      const suits = ['♠', '♥', '♣', '♦']
-      const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-      deck = []
-      for (let suit of suits) {
-        for (let value of values) {
-          deck.push({ suit, value })
+    function bj_createDeck() {
+        const suits = ['♠', '♥', '♣', '♦'];
+        const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        let deck = [];
+        for (let suit of suits) for (let value of values) deck.push({ suit, value });
+        return deck.sort(() => Math.random() - 0.5);
+    }
+    function bj_getCardValue(card) {
+        if (['J', 'Q', 'K'].includes(card.value)) return 10;
+        if (card.value === 'A') return 11;
+        return parseInt(card.value);
+    }
+    function bj_calculateTotal(hand) {
+        let total = 0, aces = 0;
+        for (let card of hand) {
+            total += bj_getCardValue(card);
+            if (card.value === 'A') aces++;
         }
-      }
-      return deck.sort(() => Math.random() - 0.5)
+        while (total > 21 && aces > 0) { total -= 10; aces--; }
+        return total;
     }
-
-    function getCardValue(card) {
-      if (['J', 'Q', 'K'].includes(card.value)) return 10
-      if (card.value === 'A') return 11
-      return parseInt(card.value)
-    }
-
-    function calculateTotal(hand) {
-      let total = 0
-      let aces = 0
-      for (let card of hand) {
-        const val = getCardValue(card)
-        total += val
-        if (card.value === 'A') aces++
-      }
-      while (total > 21 && aces > 0) {
-        total -= 10
-        aces--
-      }
-      return total
-    }
-
-    function displayHand(el, hand) {
-      el.innerHTML = ''
-      hand.forEach(card => {
-        const cardEl = document.createElement('div')
-        cardEl.className = 'card'
-        cardEl.textContent = `${card.value}${card.suit}`
-        el.appendChild(cardEl)
-      })
-    }
-    
-    function updateBjDisplay() {
-      displayHand(playerCardsEl, playerHand)
-      playerTotalEl.textContent = 'Total: ' + calculateTotal(playerHand)
-      
-      const dealerHandToShow = [...dealerHand];
-      if (!bjGameOver) {
-          dealerHandToShow.push({suit: '?', value: ''});
-      }
-      displayHand(dealerCardsEl, dealerHandToShow)
-      
-      dealerTotalEl.textContent = bjGameOver ? 'Total: ' + calculateTotal(dealerHand) : 'Total: ?'
-    }
-
-
-    function hit() {
-      if (bjGameOver) return alert('Game over! Start a new game.');
-      playerHand.push(deck.pop())
-      updateBjDisplay()
-      if (calculateTotal(playerHand) > 21) {
-        endGame()
-      }
-    }
-
-    function stand() {
-      if (bjGameOver) return alert('Game over! Start a new game.');
-      while (calculateTotal(dealerHand) < 17) {
-        dealerHand.push(deck.pop())
-      }
-      endGame()
-    }
-
-    function endGame() {
-      bjGameOver = true
-      const playerTotal = calculateTotal(playerHand)
-      const dealerTotal = calculateTotal(dealerHand)
-      let outcome = ''
-      let betChange = 0;
-      const currentBet = parseInt(document.getElementById('bjBet').value) || 0;
-
-      if (playerTotal > 21) {
-        outcome = 'You Busted! 💥 Dealer Wins!'
-        betChange = -currentBet;
-      } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
-        outcome = 'You Win! 🎉'
-        betChange = currentBet;
-      } else if (playerTotal < dealerTotal) {
-        outcome = 'Dealer Wins! 😢'
-        betChange = -currentBet;
-      } else {
-        outcome = 'Push (Tie)! 🤝'
-        betChange = 0;
-      }
-      resultEl.textContent = outcome;
-      updateBjDisplay();
-      if(betChange !== 0) {
-        app.updateBalance(betChange);
-      }
-    }
-
-    function resetGame() {
-      const currentBet = parseInt(document.getElementById('bjBet').value) || 0;
-      if (currentBet > app.balance) return alert('Insufficient balance!');
-      
-      deck = createDeck()
-      playerHand = [deck.pop(), deck.pop()]
-      dealerHand = [deck.pop()]
-      bjGameOver = false
-      resultEl.textContent = ''
-      updateBjDisplay()
-
-      if(calculateTotal(playerHand) === 21) {
-          endGame();
-      }
-    }
-  </script>
-
-  <!-- Mines Script -->
-  <script>
-    let isGameActive = false
-    let safeTiles = []
-    let clickedTiles = new Set()
-    let multiplier = 1
-
-    function startGame() {
-        const bet = parseInt(document.getElementById('betAmount').value);
-        const mines = parseInt(document.getElementById('mineCount').value);
-
-        if (bet <= 0 || bet > app.balance) return alert('Invalid bet or insufficient balance.');
-        
-        app.updateBalance(-bet).then(() => {
-            document.getElementById('multiplier').textContent = '1.00x'
-            multiplier = 1
-            clickedTiles = new Set()
-            isGameActive = true
-            generateGrid(mines)
+    function bj_displayHand(el, hand, hideFirst) {
+        el.innerHTML = '';
+        hand.forEach((card, index) => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            cardEl.textContent = (index === 0 && hideFirst) ? '?' : `${card.value}${card.suit}`;
+            el.appendChild(cardEl);
         });
     }
+    function bj_updateDisplay() {
+        bj_displayHand(bj_elements.playerCards, bj_playerHand);
+        bj_elements.playerTotal.textContent = 'Total: ' + bj_calculateTotal(bj_playerHand);
+        bj_displayHand(bj_elements.dealerCards, bj_dealerHand, !bj_gameOver);
+        bj_elements.dealerTotal.textContent = bj_gameOver ? 'Total: ' + bj_calculateTotal(bj_dealerHand) : 'Total: ?';
+    }
+    function bj_hit() {
+        if (bj_gameOver) return;
+        bj_playerHand.push(bj_deck.pop());
+        bj_updateDisplay();
+        if (bj_calculateTotal(bj_playerHand) > 21) bj_endGame();
+    }
+    function bj_stand() {
+        if (bj_gameOver) return;
+        while (bj_calculateTotal(bj_dealerHand) < 17) bj_dealerHand.push(bj_deck.pop());
+        bj_endGame();
+    }
+    function bj_endGame() {
+        bj_gameOver = true;
+        const playerTotal = bj_calculateTotal(bj_playerHand);
+        const dealerTotal = bj_calculateTotal(bj_dealerHand);
+        let outcome = '', betChange = 0;
+        const currentBet = vue_app.bjBet;
 
-    function generateGrid(mines) {
-      const grid = document.getElementById('grid')
-      grid.innerHTML = ''
-      safeTiles = Array(25).fill('safe')
-      let minePositions = new Set();
-      while(minePositions.size < mines) {
-          minePositions.add(Math.floor(Math.random() * 25));
-      }
-      minePositions.forEach(idx => safeTiles[idx] = 'mine');
-
-      for (let i = 0; i < 25; i++) {
-        const cell = document.createElement('div')
-        cell.className = 'cell'
-        cell.onclick = () => handleClick(i, cell)
-        grid.appendChild(cell)
-      }
+        if (playerTotal > 21) { outcome = 'You Busted! 💥 Dealer Wins!'; betChange = -currentBet; }
+        else if (dealerTotal > 21 || playerTotal > dealerTotal) { outcome = 'You Win! 🎉'; betChange = currentBet; }
+        else if (playerTotal < dealerTotal) { outcome = 'Dealer Wins! 😢'; betChange = -currentBet; }
+        else { outcome = 'Push (Tie)! 🤝'; }
+        
+        bj_elements.result.textContent = outcome;
+        bj_updateDisplay();
+        if (betChange !== 0) vue_app.updateBalance(betChange);
+    }
+    function bj_resetGame() {
+        if (vue_app.bjBet > vue_app.balance) return alert('Insufficient balance!');
+        bj_deck = bj_createDeck();
+        bj_playerHand = [bj_deck.pop(), bj_deck.pop()];
+        bj_dealerHand = [bj_deck.pop()];
+        bj_gameOver = false;
+        bj_elements.result.textContent = '';
+        bj_updateDisplay();
+        if (bj_calculateTotal(bj_playerHand) === 21) bj_endGame();
     }
 
-    function handleClick(index, cell) {
-      if (!isGameActive || clickedTiles.has(index)) return
-      clickedTiles.add(index)
-      if (safeTiles[index] === 'mine') {
-        cell.classList.add('mine')
-        cell.innerHTML = '💣'
-        isGameActive = false
-        alert('💥 You hit a mine! Game over.')
-      } else {
-        cell.classList.add('safe')
-        cell.innerHTML = '💎'
-        multiplier = parseFloat((multiplier * 1.15).toFixed(2)) // Recalculate based on revealed safes for fairness
-        document.getElementById('multiplier').textContent = `${multiplier}x`
-      }
-    }
+    // --- Mines ---
+    let mines_isGameActive = false;
+    let mines_safeTiles = [];
+    let mines_clickedTiles = new Set();
+    let mines_multiplier = 1;
 
-    function cashout() {
-      if (!isGameActive || clickedTiles.size === 0) return
-      const bet = parseInt(document.getElementById('betAmount').value);
-      const payout = Math.floor(bet * multiplier)
-      app.updateBalance(payout).then(() => {
-        showCashout(payout)
-        isGameActive = false
-      })
+    function mines_startGame() {
+        const bet = vue_app.betAmount;
+        if (bet <= 0 || bet > vue_app.balance) return alert('Invalid bet or insufficient balance.');
+        
+        vue_app.updateBalance(-bet).then(() => {
+            document.getElementById('multiplier').textContent = '1.00x';
+            mines_multiplier = 1;
+            mines_clickedTiles = new Set();
+            mines_isGameActive = true;
+            mines_generateGrid(vue_app.mineCount);
+        });
     }
+    function mines_generateGrid(mines) {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        mines_safeTiles = Array(25).fill('safe');
+        let minePositions = new Set();
+        while (minePositions.size < mines) minePositions.add(Math.floor(Math.random() * 25));
+        minePositions.forEach(idx => mines_safeTiles[idx] = 'mine');
 
-    function showCashout(amount) {
-      const overlay = document.getElementById('cashoutMessage')
-      document.getElementById('cashoutAmount').textContent = amount.toLocaleString()
-      overlay.style.display = 'block'
-      setTimeout(() => {
-        overlay.style.display = 'none'
-      }, 3000)
+        for (let i = 0; i < 25; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.onclick = () => mines_handleClick(i, cell);
+            grid.appendChild(cell);
+        }
+    }
+    function mines_handleClick(index, cell) {
+        if (!mines_isGameActive || mines_clickedTiles.has(index)) return;
+        mines_clickedTiles.add(index);
+        if (mines_safeTiles[index] === 'mine') {
+            cell.classList.add('mine');
+            cell.innerHTML = '💣';
+            mines_isGameActive = false;
+            alert('💥 You hit a mine! Game over.');
+        } else {
+            cell.classList.add('safe');
+            cell.innerHTML = '💎';
+            mines_multiplier = parseFloat((mines_multiplier * 1.15).toFixed(2));
+            document.getElementById('multiplier').textContent = `${mines_multiplier}x`;
+        }
+    }
+    function mines_cashout() {
+        if (!mines_isGameActive || mines_clickedTiles.size === 0) return;
+        const payout = Math.floor(vue_app.betAmount * mines_multiplier);
+        vue_app.updateBalance(payout).then(() => {
+            const overlay = document.getElementById('cashoutMessage');
+            document.getElementById('cashoutAmount').textContent = payout.toLocaleString();
+            overlay.style.display = 'block';
+            setTimeout(() => { overlay.style.display = 'none'; }, 3000);
+            mines_isGameActive = false;
+        });
     }
   </script>
 
-  <!-- Vue App Script -->
+  <!-- VUE APP SCRIPT -->
   <script>
-    const app = Vue.createApp({
+    vue_app = Vue.createApp({
       data() {
         return {
-          page: 'login', // Start with login page
+          page: localStorage.getItem('token') ? 'home' : 'login',
           token: localStorage.getItem('token') || null,
           username: localStorage.getItem('username') || 'Guest',
-          loginUsername: '',
-          loginPassword: '',
-          registerUsername: '',
-          registerPassword: '',
+          loginUsername: '', loginPassword: '',
+          registerUsername: '', registerPassword: '',
           balance: 0,
           messages: [],
           newMessage: '',
           onlineUsers: [],
-          // Game-specific data models
+          socket: null,
           bjBet: 100,
-          betAmount: 1000,
+          betAmount: 100,
           mineCount: 3
         }
       },
       watch: {
-          messages() {
-              // Auto-scroll chat
-              this.$nextTick(() => {
-                  const container = this.$refs.chatMessages;
-                  if (container) {
-                    container.scrollTop = container.scrollHeight;
-                  }
-              });
-          }
+          messages() { this.$nextTick(() => { this.$refs.chatMessages.scrollTop = this.$refs.chatMessages.scrollHeight; }); }
       },
       methods: {
         async register() {
@@ -734,10 +348,12 @@
               alert('Registered successfully! Please log in.');
               this.page = 'login';
             } else {
-              alert(data.error || 'Registration failed');
+              console.error('Registration failed:', data);
+              alert(data.error || 'Registration failed. Check console for details.');
             }
           } catch(err) {
-            alert('An error occurred during registration.');
+            console.error('A network error occurred during registration:', err);
+            alert('A network error occurred during registration.');
           }
         },
         async login() {
@@ -748,7 +364,8 @@
               body: JSON.stringify({ username: this.loginUsername, password: this.loginPassword }),
             });
             const data = await res.json();
-            if (res.ok) {
+            console.log('Login response:', data); // DEBUG
+            if (res.ok && data.token) {
               this.token = data.token;
               this.username = data.username;
               this.balance = data.balance;
@@ -757,10 +374,12 @@
               this.page = 'home';
               this.initializeSocket();
             } else {
-              alert(data.error || 'Login failed');
+              console.error('Login failed:', data);
+              alert(data.error || 'Login failed. Check console for details.');
             }
           } catch(err) {
-            alert('An error occurred during login.');
+            console.error('A network error occurred during login:', err);
+            alert('An error occurred during login. Check console.');
           }
         },
         logout() {
@@ -769,9 +388,7 @@
           this.token = null;
           this.username = 'Guest';
           this.page = 'login';
-          if (this.socket) {
-              this.socket.disconnect();
-          }
+          if (this.socket) this.socket.disconnect();
         },
         async updateBalance(change) {
             if (!this.token) return;
@@ -779,30 +396,32 @@
                 const res = await fetch('/api/balance', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${this.token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ change: change }) // Send change instead of new balance
+                    body: JSON.stringify({ change: change })
                 });
                 const data = await res.json();
                 if(res.ok){
                     this.balance = data.balance;
                 } else {
                     alert('Error updating balance: ' + data.error);
-                    // Re-fetch balance to be sure
                     this.fetchBalance();
                 }
             } catch (error) {
+                console.error("Failed to update balance:", error);
                 alert('Failed to update balance.');
             }
         },
         async fetchBalance() {
             if (!this.token) return;
             try {
-                const res = await fetch('/api/balance', {
-                    headers: { 'Authorization': `Bearer ${this.token}` }
-                });
+                const res = await fetch('/api/balance', { headers: { 'Authorization': `Bearer ${this.token}` } });
+                if(res.status === 403 || res.status === 401) { // Token invalid
+                    this.logout();
+                    return;
+                }
                 const data = await res.json();
                 this.balance = data.balance || 0;
             } catch (error) {
-                console.error("Could not fetch balance");
+                console.error("Could not fetch balance:", error);
             }
         },
         sendMessage() {
@@ -812,25 +431,30 @@
           }
         },
         initializeSocket() {
-            this.socket = io({
-                auth: {
-                    token: this.token
-                }
+            if(this.socket) this.socket.disconnect();
+            this.socket = io({ auth: { token: this.token } });
+            this.socket.on('connect', () => {
+                console.log('Socket connected!');
+                this.socket.emit('join', { username: this.username });
             });
-            this.socket.emit('join', { username: this.username });
             this.socket.on('messages', m => this.messages = m);
             this.socket.on('message', m => this.messages.push(m));
             this.socket.on('users', users => this.onlineUsers = users);
         }
       },
       mounted() {
+        vue_app = this; // Make app instance global
         if (this.token) {
           this.page = 'home';
           this.fetchBalance();
           this.initializeSocket();
-          // Periodically sync balance
-          setInterval(this.fetchBalance, 15000); 
         }
+        // Cache DOM elements for games
+        bj_elements.playerCards = document.getElementById('player-cards');
+        bj_elements.dealerCards = document.getElementById('dealer-cards');
+        bj_elements.playerTotal = document.getElementById('player-total');
+        bj_elements.dealerTotal = document.getElementById('dealer-total');
+        bj_elements.result = document.getElementById('result');
       }
     }).mount('#app');
   </script>
